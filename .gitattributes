@@ -1,13 +1,13 @@
-# TypeScript files
+# Treat TypeScript files normally
 *.ts linguist-language=TypeScript
 
-# HTML templates — count normally
-*.html linguist-language=HTML
+# Treat HTML templates as generated (so they don't dominate language stats)
+*.html linguist-generated=true
 
-# CSS/SCSS
+# Treat CSS/SCSS normally
 *.css linguist-language=CSS
 *.scss linguist-language=SCSS
 
-# Ignore build/dist folders
+# Ignore node_modules and build artifacts
 node_modules/** linguist-vendored
 dist/** linguist-vendored
