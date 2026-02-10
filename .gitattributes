@@ -1,0 +1,13 @@
+# Treat TypeScript files normally
+*.ts linguist-language=TypeScript
+
+# Treat HTML templates as generated (so they don't dominate language stats)
+*.html linguist-generated=true
+
+# Treat CSS/SCSS normally
+*.css linguist-language=CSS
+*.scss linguist-language=SCSS
+
+# Ignore node_modules and build artifacts
+node_modules/** linguist-vendored
+dist/** linguist-vendored
