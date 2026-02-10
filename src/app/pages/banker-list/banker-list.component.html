@@ -1,0 +1,50 @@
+<div class="container my-4 p-4 shadow rounded bg-light">
+    <h2 class="mb-3 fw-bold text-center heading">
+        <span><i class="bi bi-person-badge-fill"></i></span>
+        User Details
+        <span><i class="bi bi-person-badge-fill"></i></span>
+    </h2>
+    <div class="table-responsive">
+        <table class="table table-striped table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>Username</th>
+                    <th>Email ID</th>
+                    <th>Full Name</th>
+                    <th>Role</th>
+                    <th>Created Date</th>
+                    <th>Project</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+ <tbody>
+    @for (user of userList; track user._id) {
+    <tr>
+        <td>{{ user.username }}</td>
+        <td>{{ user.emailId }}</td>
+        <td>{{ user.fullName }}</td>
+        <td>
+            <span class="badge" [ngClass]="{
+                'bg-danger': user.role === 'Admin',
+                'bg-primary': user.role === 'Banker',
+                'bg-info': user.role === 'Customer'
+            }">
+                {{ user.role }}
+            </span>
+        </td>
+        <td>{{ user.createdAt | date:'dd-MMM-yyyy' }}</td> 
+        <td>{{ user.projectName || 'N/A' }}</td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-primary me-2"><i class="bi bi-pencil"></i></button>
+           <button class="btn btn-sm btn-danger"
+        (click)="deleteUser(user._id)">
+  <i class="bi bi-trash"></i>
+</button>
+
+        </td>
+    </tr>
+    }
+</tbody>
+        </table>
+    </div>
+</div>

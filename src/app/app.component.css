@@ -1,0 +1,113 @@
+/* Navbar container */
+.navbar {
+  display: flex;
+  align-items: center;
+  border: 1px solid #475569;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  background-color: #000;
+  color: #fff;
+  position: relative;
+  flex-wrap: wrap;
+}
+
+/* Logo */
+.logo {
+  margin-right: 24px;
+}
+
+/* Desktop menu */
+.menu-desktop {
+  display: flex;
+  gap: 24px;
+  flex: 1;
+}
+
+.menu-desktop a {
+  position: relative;
+  overflow: hidden;
+  height: 24px;
+  text-decoration: none;
+  color: #fff;
+  font-size: 14px;
+  transition: color 0.3s;
+}
+
+.menu-desktop a:hover {
+  color: #6366f1; /* Indigo */
+}
+
+/* Desktop buttons */
+.buttons-desktop {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-outline {
+  border: 1px solid #475569;
+  background: transparent;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+.btn-outline:hover {
+  background-color: #1e293b;
+}
+
+.btn-primary {
+  background-color: #fff;
+  color: #000;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: box-shadow 0.3s, background 0.3s;
+}
+
+.btn-primary:hover {
+  box-shadow: 0 0 30px 14px rgba(255, 255, 255, 0.5);
+  background-color: #f3f4f6;
+}
+
+/* Mobile toggle button */
+.menu-toggle {
+  display: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+}
+
+/* Mobile menu */
+.menu-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  position: absolute;
+  top: 64px;
+  left: 0;
+  width: 100%;
+  background-color: #000;
+  padding: 12px 0;
+  text-align: center;
+}
+
+.menu-mobile.show {
+  display: flex;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .menu-desktop,
+  .buttons-desktop {
+    display: none;
+  }
+
+  .menu-toggle {
+    display: block;
+    margin-left: auto;
+  }
+}

@@ -1,0 +1,287 @@
+<div class="container my-4 p-4 shadow rounded bg-light">
+  <h2 class="mb-3 fw-bold text-center heading">
+    <span><i class="bi bi-bank2"></i></span>
+    Bank Application
+    <span><i class="bi bi-bank2"></i></span>
+  </h2>
+
+  <form [formGroup]="loanForm" (ngSubmit)="submit()">
+
+    <div class="mb-4">
+      <div class="row">
+        <div class="col-lg-12">
+          <h3 class="mb-3 text-primary fw-bold heading">Personal Details</h3>
+
+          <div class="row g-1 mt-1">
+            <div class="col-md-6">
+              <label for="fullName" class="form-label">Full Name :</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-person-lines-fill"></i></span>
+                <input id="fullName" formControlName="fullName" class="form-control border-2 shadow-sm"
+                  [class.is-invalid]="getControl('fullName')?.invalid && getControl('fullName')?.touched"
+                  placeholder="Enter your full name" />
+              </div>
+              <div class="text-danger small" *ngIf="getControl('fullName')?.invalid && getControl('fullName')?.touched">
+                Name is required (min 3 characters).
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-1 mt-1">
+            <div class="col-md-3">
+              <label for="email" class="form-label">Email :</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-envelope-fill"></i></span>
+                <input id="email" type="email" formControlName="email" class="form-control border-2"
+                  [class.is-invalid]="getControl('email')?.invalid && getControl('email')?.touched"
+                  placeholder="Enter your email address" />
+              </div>
+              <div class="text-danger small" *ngIf="getControl('email')?.invalid && getControl('email')?.touched">
+                Valid email is required.
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="mobileNumber" class="form-label">Phone Number :</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-telephone-fill"></i></span>
+                <input id="mobileNumber" type="tel" formControlName="mobileNumber"
+                  [class.is-invalid]="getControl('mobileNumber')?.invalid && getControl('mobileNumber')?.touched"
+                  class="form-control border-2" placeholder="Enter your phone number" />
+              </div>
+              <div class="text-danger small" *ngIf="getControl('mobileNumber')?.invalid && getControl('mobileNumber')?.touched">
+                10-digit number required.
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="dateOfBirth" class="form-label">Date of Birth:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-calendar-date-fill"></i></span>
+                <input id="dateOfBirth" type="date" formControlName="dateOfBirth"
+                  [class.is-invalid]="getControl('dateOfBirth')?.invalid && getControl('dateOfBirth')?.touched"
+                  class="form-control border-2" />
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-1 mt-1">
+            <div class="col-md-3">
+              <label for="panCard" class="form-label">PAN Card:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-credit-card-fill"></i></span>
+                <input id="panCard" type="text" maxlength="10" formControlName="panCard"
+                  [class.is-invalid]="getControl('panCard')?.invalid && getControl('panCard')?.touched"
+                  class="form-control border-2" placeholder="Enter your PAN Card number" />
+              </div>
+              <div class="text-danger small" *ngIf="getControl('panCard')?.invalid && getControl('panCard')?.touched">
+                Invalid PAN (e.g. ABCDE1234F).
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="salary" class="form-label">Annual Income:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-currency-dollar"></i></span>
+                <input id="salary" type="number" formControlName="salary" class="form-control border-2"
+                  [class.is-invalid]="getControl('salary')?.invalid && getControl('salary')?.touched"
+                  placeholder="Enter your annual income" />
+              </div>
+            </div>
+
+            <div class="col-md-3">
+              <label for="employmentStatus" class="form-label">Employment Status:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-briefcase-fill"></i></span>
+                <select id="employmentStatus" formControlName="employmentStatus" class="form-control border-2"
+                  [class.is-invalid]="getControl('employmentStatus')?.invalid && getControl('employmentStatus')?.touched">
+                  <option value="" disabled>Select your employment status</option>
+                  <option value="employed">Employed</option>
+                  <option value="unemployed">Unemployed</option>
+                  <option value="freelancer">Freelancer</option>
+                  <option value="student">Student</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-1 mt-1">
+            <div class="col-md-4">
+              <label for="applicationStatus" class="form-label">Application Status:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-file-earmark-check-fill"></i></span>
+                <select id="applicationStatus" formControlName="applicationStatus" class="form-select border-2"
+                  [class.is-invalid]="getControl('applicationStatus')?.invalid && getControl('applicationStatus')?.touched">
+                  <option value="" disabled>Select Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="creditScore" class="form-label">Credit Score:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-credit-card-fill"></i></span>
+                <input type="number" id="creditScore" formControlName="creditScore" class="form-control border-2"
+                  [class.is-invalid]="getControl('creditScore')?.invalid && getControl('creditScore')?.touched"
+                  placeholder="Enter your credit score" />
+              </div>
+              <div class="text-danger small" *ngIf="getControl('creditScore')?.invalid && getControl('creditScore')?.touched">
+                Must be between 300 and 900.
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="assets" class="form-label">Assets:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-archive-fill"></i></span>
+                <textarea id="assets" formControlName="assets" class="form-control border-2"
+                  [class.is-invalid]="getControl('assets')?.invalid && getControl('assets')?.touched"
+                  placeholder="Describe your assets" rows="1"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <hr>
+          <h5 class="mt-4 text-primary fw-bold heading">Address Details</h5>
+          <div class="row mt-2 pt-2">
+            <div class="col-md-4">
+              <label for="city" class="form-label">City:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill"></i></span>
+                <input type="text" id="city" formControlName="city" class="form-control border-2"
+                  [class.is-invalid]="getControl('city')?.invalid && getControl('city')?.touched" />
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="state" class="form-label">State:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill"></i></span>
+                <input type="text" id="state" formControlName="state" class="form-control border-2"
+                  [class.is-invalid]="getControl('state')?.invalid && getControl('state')?.touched" />
+              </div>
+            </div>
+
+            <div class="col-md-4">
+              <label for="zipCode" class="form-label">Zip Code:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-geo-alt-fill"></i></span>
+                <input type="text" id="zipCode" formControlName="zipCode" class="form-control border-2"
+                  [class.is-invalid]="getControl('zipCode')?.invalid && getControl('zipCode')?.touched" />
+              </div>
+            </div>
+
+            <div class="col-md-6 mt-2">
+              <label for="address" class="form-label">Address:</label>
+              <div class="input-group shadow-sm">
+                <span class="input-group-text bg-light"><i class="bi bi-house-door-fill"></i></span>
+                <textarea id="address" formControlName="address" class="form-control border-2"
+                  [class.is-invalid]="getControl('address')?.invalid && getControl('address')?.touched"
+                  placeholder="Enter your address" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <hr>
+
+    <div class="mb-4">
+      <div class="row g-3">
+        <div class="col-lg-7">
+          <h4>Loan Details</h4>
+          <table class="table table-bordered">
+            <thead>
+              <tr>
+                <th>Sr No</th>
+                <th>Bank Name</th>
+                <th>Loan Amount</th>
+                <th>EMI</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody formArrayName="loans">
+              <tr *ngFor="let loan of loans.controls; let i = index" [formGroupName]="i">
+                <td>{{ i + 1 }}</td>
+                <td>{{ loan.get('bankName')?.value }}</td>
+                <td>{{ loan.get('loanAmount')?.value | number }}</td>
+                <td>{{ loan.get('emi')?.value | number }}</td>
+                <td>
+                  <button type="button" class="btn btn-danger btn-sm" (click)="removeLoan(i)">Remove</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="col-lg-5">
+          <h5>Add Loan Details</h5>
+          <div class="row g-2">
+            <div class="col-md-4">
+              <input type="text" class="form-control" placeholder="Bank Name" #bankName />
+            </div>
+            <div class="col-md-4">
+              <input type="number" class="form-control" placeholder="Loan Amount" #loanAmount />
+            </div>
+            <div class="col-md-4">
+              <input type="number" class="form-control" placeholder="EMI" #emi />
+            </div>
+          </div>
+          <div class="mt-2">
+            <button type="button" class="btn btn-primary" (click)="addLoan(bankName, loanAmount, emi)">Add Loan</button>
+          </div>
+        </div>
+      </div>
+ <div class="col-md-6">
+    <label class="form-label fw-bold text-primary">
+      <i class="bi bi-file-earmark-arrow-up"></i> Supporting Documents (PDF/Image)
+    </label>
+    <div class="input-group shadow-sm">
+      <input type="file" class="form-control" (change)="onFileSelected($event)">
+      <button class="btn btn-dark" type="button" (click)="upload()">
+        <i class="bi bi-upload"></i> Upload
+      </button>
+    </div>
+    
+    <div class="mt-2" *ngIf="loanForm.get('docPath')?.value">
+      <a *ngIf="loanForm.get('docPath')?.value"
+   [href]="'http://localhost:3000/' + loanForm.get('docPath')?.value"
+   target="_blank"
+   class="btn btn-sm btn-outline-success">
+   <i class="bi bi-file-earmark-pdf-fill"></i> View Uploaded Document
+</a>
+
+    </div>
+  </div>
+
+
+    </div>
+
+
+ <div class="d-flex justify-content-center gap-2 mt-3">
+  
+ <button *ngIf="!applicationId" type="button" (click)="submit()" class="btn text-white"
+  style="background: linear-gradient(to right, #00c6ff, #0072ff);">
+  <i class="bi bi-save"></i> Save Application
+</button>
+
+<button *ngIf="applicationId" type="button" (click)="submit()" 
+  class="btn text-white"
+  style="background: linear-gradient(to right, #11998e, #38ef7d);">
+  <i class="bi bi-pencil-square"></i> Update
+</button>
+
+<button *ngIf="applicationId" type="button" (click)="onDelete()" 
+  class="btn text-white"
+  style="background: linear-gradient(to right, #ff5f6d, #ffc371);">
+  <i class="bi bi-trash"></i> Delete
+</button>
+
+</div>
+  </form>
+</div>

@@ -1,0 +1,34 @@
+ .heading {
+            color: #1e3c72 !important;
+        }
+
+        .addmore {
+            background: linear-gradient(to right, #1e3c72, #2a5298);
+            border: none;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1)
+
+        }
+
+        .form-control::placeholder {
+            font-size: 16px;
+        }
+
+        i {
+            color: #1e3c72 !important;
+        }
+
+        /* Makes the buttons look 'less visible' and unclickable */
+.opacity-50 {
+  opacity: 0.4 !important;
+  filter: grayscale(50%);
+}
+
+.cursor-not-allowed {
+  cursor: not-allowed !important;
+  pointer-events: none; /* Ensures no clicks go through */
+}
+
+/* Optional: Smooth transition when they become active */
+.btn {
+  transition: all 0.3s ease;
+}

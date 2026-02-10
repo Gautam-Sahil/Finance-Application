@@ -1,0 +1,100 @@
+{
+  "users": [
+    {
+      "userId": 1,
+      "username": "admin",
+      "emailId": "admin@test.com",
+      "fullName": "Admin User",
+      "password": "1234",
+      "role": "Admin",
+      "id": "ee0a"
+    },
+    {
+      "id": "330b",
+      "userId": 0,
+      "username": "",
+      "emailId": "",
+      "fullName": "",
+      "password": ""
+    },
+    {
+      "id": "5e87",
+      "userId": 0,
+      "username": "nothing",
+      "emailId": "nothing@gmail.com",
+      "fullName": "jello",
+      "password": "nothing"
+    },
+    {
+      "userId": 0,
+      "username": "Gautam",
+      "emailId": "gautam@gmail.com",
+      "fullName": "gautam",
+      "password": "gautam",
+      "id": "myief4v",
+      "role": "Admin"
+    },
+    {
+      "userId": 0,
+      "username": "admin",
+      "emailId": "admin@test.com",
+      "fullName": "Admin User",
+      "password": "1234",
+      "id": "srOObBi"
+    },
+    {
+      "userId": 0,
+      "username": "nothing",
+      "emailId": "sahiltiwari0077@gmail.com",
+      "fullName": "Gautam Tiwari",
+      "password": "gautam",
+      "id": "Y8b1rzr"
+    }
+  ],
+  "loans": [
+    {
+      "fullName": "",
+      "email": "",
+      "mobileNumber": "",
+      "dateOfBirth": "",
+      "panCard": "",
+      "salary": "",
+      "employmentStatus": "",
+      "applicationStatus": "",
+      "creditScore": "",
+      "assets": "",
+      "address": "",
+      "city": "",
+      "state": "",
+      "zipCode": "",
+      "loans": [],
+      "id": 1
+    },
+    {
+      "fullName": "Gautam Tiwari",
+      "email": "sahiltiwari0077@gmail.com",
+      "mobileNumber": "4543333333",
+      "dateOfBirth": "2026-02-18",
+      "panCard": "ABCDE1234G",
+      "salary": 9,
+      "employmentStatus": "employed",
+      "applicationStatus": "pending",
+      "creditScore": 777,
+      "assets": "68767",
+      "address": "vhjvhjjhvj",
+      "city": "Thane",
+      "state": "4545",
+      "zipCode": "89888",
+      "loans": [
+        {
+          "loanId": 0,
+          "applicationId": 0,
+          "bankName": "bjkj",
+          "loanAmount": 9890,
+          "emi": 51651
+        }
+      ],
+      "id": 2
+    }
+  ]
+}
