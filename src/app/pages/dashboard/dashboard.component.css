@@ -1,0 +1,16 @@
+.card {
+  border-radius: 0.5rem;
+}
+
+.card h5 {
+  font-size: 1.1rem;
+}
+
+.card p, .list-group-item {
+  font-size: 0.9rem;
+  padding: 0.5rem 1rem;
+}
+
+#statusChart {
+  max-height: 280px; /* Makes the chart smaller */
+}

@@ -1,6 +1,9 @@
-  .heading {
-            color: #1e3c72 !important;
-        }
+.heading {
+  color: #2c3e50;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 10px;
+  display: inline-block;
+}
 
         .table th,
         .table td {
@@ -44,4 +47,85 @@
     background: linear-gradient(to right, #ff5252, #ff7a7a); /* Darker Red Gradient */
     transform: scale(1.05);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.table thead th {
+  vertical-align: middle;
+  background-color: #212529;
+  color: white;
+  font-weight: 500;
+  border-bottom: none;
+}
+
+.table tbody tr {
+  transition: all 0.2s;
+}
+
+.table tbody tr:hover {
+  background-color: rgba(52, 152, 219, 0.05);
+}
+
+.badge {
+  font-weight: 500;
+  padding: 6px 10px;
+}
+
+.btn-outline-info, .btn-outline-primary, .btn-outline-danger {
+  border-width: 1px;
+  transition: all 0.2s;
+}
+
+.btn-outline-info:hover {
+  background-color: #0dcaf0;
+  color: white;
+}
+
+.btn-outline-primary:hover {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.btn-outline-danger:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.page-link {
+  cursor: pointer;
+  color: #2c3e50;
+}
+
+.page-item.active .page-link {
+  background-color: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+.card {
+  border-radius: 10px;
+}
+
+.modal-header.bg-primary {
+  background: linear-gradient(135deg, #1e3c72, #2a5298) !important;
+}
+
+.modal-content {
+  border: none;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.spinner-border {
+  width: 3rem;
+  height: 3rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem !important;
+  }
+  
+  .table td, .table th {
+    white-space: nowrap;
+  }
 }

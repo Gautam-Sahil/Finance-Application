@@ -12,7 +12,7 @@ export class AuthService {
  currentUserSignal = signal<any>(JSON.parse(sessionStorage.getItem('bankUser') || 'null'));
 
  updateUser(user: any) {
-    sessionStorage.setItem('bankUser', JSON.stringify(user));
+    sessionStorage.setItem('loanUser', JSON.stringify(user));
     this.currentUserSignal.set(user);
   }
 
@@ -25,7 +25,7 @@ export class AuthService {
     return this.http.post<any>(`${this.apiUrl}/login`, credentials).pipe(
       tap(res => {
         // Store token and user info
-        localStorage.setItem('authToken', res.token);
+        localStorage.setItem('loanApp_token', res.token);
         localStorage.setItem('loanUser', JSON.stringify(res.user));
         this.currentUserSignal.set(res.user);
       })

@@ -32,3 +32,37 @@
 .btn {
   transition: all 0.3s ease;
 }
+
+/* Timeline styling */
+.timeline {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.timeline-item {
+  position: relative;
+  padding-left: 30px;
+  border-left: 2px solid #dee2e6;
+}
+.timeline-item:last-child {
+  border-left-color: transparent;
+}
+.timeline-icon {
+  position: absolute;
+  left: -9px;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #007bff;
+}
+.timeline-icon.approved { background: #28a745; border-color: #28a745; }
+.timeline-icon.rejected { background: #dc3545; border-color: #dc3545; }
+.timeline-icon.doc_verified { background: #17a2b8; border-color: #17a2b8; }
+.timeline-content {
+  background: #f8f9fa;
+  padding: 10px 15px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+}

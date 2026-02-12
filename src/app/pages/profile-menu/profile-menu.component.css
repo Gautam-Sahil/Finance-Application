@@ -1,0 +1,39 @@
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1e3c72, #2a5298);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.avatar-circle:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+}
+
+.dropdown-menu {
+  margin-top: 10px;
+  border: none;
+  border-radius: 10px;
+}
+
+.dropdown-item {
+  padding: 10px 20px;
+  transition: background 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: #f8f9fa;
+}
+
+.badge {
+  margin-top: 4px;
+}

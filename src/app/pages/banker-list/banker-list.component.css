@@ -1,10 +1,14 @@
        .heading {
-            color: #1e3c72 !important;
-        }
+    color: #2c3e50;
+    border-bottom: 3px solid #3498db;
+    padding-bottom: 10px;
+}
+
 
         .table th,
         .table td {
             vertical-align: middle;
+            text-align: center;
         }
 
         .addmore {
@@ -45,4 +49,63 @@
     background: linear-gradient(to right, #ff5252, #ff7a7a); /* Darker Red Gradient */
     transform: scale(1.05);
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+
+.sortable {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.sortable:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.avatar-circle {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 0 auto;
+}
+
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: none;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+}
+
+.badge {
+    font-size: 0.8em;
+    padding: 5px 10px;
+}
+
+.page-item.active .page-link {
+    background-color: #3498db;
+    border-color: #3498db;
+}
+
+.table tbody tr {
+    transition: background-color 0.2s;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(52, 152, 219, 0.05);
+}
+
+.input-group {
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.modal-content {
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
 }

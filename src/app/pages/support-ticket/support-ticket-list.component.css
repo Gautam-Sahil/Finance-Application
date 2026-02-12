@@ -1,0 +1,22 @@
+.heading {
+  color: #2c3e50;
+  border-bottom: 3px solid #3498db;
+  padding-bottom: 8px;
+  display: inline-block;
+}
+.card {
+  border: none;
+  border-radius: 10px;
+  transition: transform 0.2s;
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.table-hover tbody tr:hover {
+  background-color: rgba(52, 152, 219, 0.05);
+}
+.badge {
+  font-weight: 500;
+  padding: 6px 12px;
+}

@@ -1,113 +1,184 @@
-/* Navbar container */
-.navbar {
+/* --- LAYOUT SETUP --- */
+.app-container {
+  display: flex;
+  height: 100vh;
+  background-color: #f0fdf4; /* Very light mint background for the whole app */
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* --- SIDEBAR STYLING --- */
+.sidebar {
+  width: 260px;
+  background-color: #d1fae5; /* Light Green Sidebar */
+  display: flex;
+  flex-direction: column;
+  box-shadow: 4px 0 12px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  transition: width 0.3s ease;
+  flex-shrink: 0;
+}
+
+/* Collapsed State Width */
+.app-container.collapsed .sidebar {
+  width: 70px;
+}
+
+/* --- HEADER / LOGO AREA --- */
+.sidebar-header {
+  height: 70px;
   display: flex;
   align-items: center;
-  border: 1px solid #475569;
-  padding: 12px 24px;
-  border-radius: 9999px;
-  background-color: #000;
-  color: #fff;
-  position: relative;
-  flex-wrap: wrap;
+  justify-content: space-between;
+  padding: 0 15px;
+  background-color: #d1fae5; /* Matches sidebar */
 }
 
-/* Logo */
-.logo {
-  margin-right: 24px;
-}
-
-/* Desktop menu */
-.menu-desktop {
+.logo-text {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #064e3b; /* Dark Green Text */
   display: flex;
-  gap: 24px;
-  flex: 1;
+  align-items: center;
+  gap: 10px;
+  white-space: nowrap;
 }
 
-.menu-desktop a {
-  position: relative;
-  overflow: hidden;
-  height: 24px;
-  text-decoration: none;
-  color: #fff;
-  font-size: 14px;
-  transition: color 0.3s;
+.kt-icon {
+  background: #064e3b;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-size: 1.2rem;
 }
 
-.menu-desktop a:hover {
-  color: #6366f1; /* Indigo */
+/* Hide Full Name when collapsed */
+.app-container.collapsed .full-name {
+  display: none;
 }
 
-/* Desktop buttons */
-.buttons-desktop {
+.toggle-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #065f46;
+  cursor: pointer;
+}
+
+/* --- NAVIGATION MENU --- */
+.sidebar-nav {
+  padding: 20px 10px;
   display: flex;
-  gap: 12px;
-}
-
-.btn-outline {
-  border: 1px solid #475569;
-  background: transparent;
-  color: #fff;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
-
-.btn-outline:hover {
-  background-color: #1e293b;
-}
-
-.btn-primary {
-  background-color: #fff;
-  color: #000;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  border: none;
-  cursor: pointer;
-  transition: box-shadow 0.3s, background 0.3s;
-}
-
-.btn-primary:hover {
-  box-shadow: 0 0 30px 14px rgba(255, 255, 255, 0.5);
-  background-color: #f3f4f6;
-}
-
-/* Mobile toggle button */
-.menu-toggle {
-  display: none;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #94a3b8;
-}
-
-/* Mobile menu */
-.menu-mobile {
-  display: none;
   flex-direction: column;
-  gap: 12px;
-  position: absolute;
-  top: 64px;
-  left: 0;
-  width: 100%;
-  background-color: #000;
-  padding: 12px 0;
-  text-align: center;
+  gap: 8px;
 }
 
-.menu-mobile.show {
+.nav-item {
   display: flex;
+  align-items: center;
+  padding: 12px 15px;
+  text-decoration: none;
+  color: #065f46; /* Dark Green Text */
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
-/* Responsive */
-@media (max-width: 768px) {
-  .menu-desktop,
-  .buttons-desktop {
-    display: none;
-  }
+.nav-item i {
+  font-size: 1.3rem;
+  min-width: 30px; /* Keeps icon fixed width */
+}
 
-  .menu-toggle {
-    display: block;
-    margin-left: auto;
-  }
+.link-text {
+  margin-left: 10px;
+  transition: opacity 0.2s;
+}
+
+/* Hide text when collapsed */
+.app-container.collapsed .link-text {
+  display: none;
+  opacity: 0;
+}
+
+/* Hover Effect (Slightly Darker Green) */
+.nav-item:hover {
+  background-color: #a7f3d0;
+  color: #064e3b;
+}
+
+/* Active State (Dark Green Background like Dashboard button in image) */
+.nav-item.active {
+  background-color: #059669;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* --- MAIN CONTENT AREA --- */
+.main-content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+ background-color: #ecfdf5;/* Very light background for content */
+}
+
+/* --- TOP HEADER (User Profile) --- */
+.top-header {
+  height: 95px;
+  min-height: 70px;
+  max-height: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end; /* Pushes content to right */
+  padding: 0 30px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.06);
+  background-color: #d1fae5;
+  z-index: 900; /* Transparent as per image */
+}
+
+.greeting {
+  font-weight: 600;
+  color: #065f46;
+  font-size: 1rem;
+}
+
+.avatar-circle {
+  width: 40px;
+  height: 40px;
+  background-color: #10b981; /* Green Avatar */
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+}
+
+/* --- PAGE CONTAINER --- */
+.page-container {
+  flex-grow: 1;
+  padding: 20px 30px;
+  overflow-y: auto; /* Internal scroll for pages */
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+}
+
+/* COLLAPSED FIX */
+.app-container.collapsed .nav-item {
+  justify-content: center;
+  padding: 12px 0;
+}
+
+.app-container.collapsed .link-text {
+  display: none;
+}
+
+.app-container.collapsed .logo-text {
+  justify-content: center;
+}
+
+.app-container.collapsed .sidebar-header {
+  justify-content: center;
 }

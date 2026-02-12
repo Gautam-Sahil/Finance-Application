@@ -1,0 +1,17 @@
+.badge {
+  font-size: 0.9rem;
+  padding: 8px 16px;
+}
+.card {
+  border: none;
+  border-radius: 10px;
+}
+.card-header {
+  border-radius: 10px 10px 0 0 !important;
+}
+.bg-light {
+  background-color: #f8f9fa !important;
+}
+textarea {
+  resize: none;
+}

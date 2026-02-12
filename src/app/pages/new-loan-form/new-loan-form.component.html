@@ -106,20 +106,7 @@
           </div>
 
           <div class="row g-1 mt-1">
-            <div class="col-md-4">
-              <label for="applicationStatus" class="form-label">Application Status:</label>
-              <div class="input-group shadow-sm">
-                <span class="input-group-text bg-light"><i class="bi bi-file-earmark-check-fill"></i></span>
-                <select id="applicationStatus" formControlName="applicationStatus" class="form-select border-2"
-                  [class.is-invalid]="getControl('applicationStatus')?.invalid && getControl('applicationStatus')?.touched">
-                  <option value="" disabled>Select Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="rejected">Rejected</option>
-                  <option value="done">Done</option>
-                </select>
-              </div>
-            </div>
+            
 
             <div class="col-md-4">
               <label for="creditScore" class="form-label">Credit Score:</label>
@@ -237,51 +224,255 @@
           </div>
         </div>
       </div>
- <div class="col-md-6">
-    <label class="form-label fw-bold text-primary">
-      <i class="bi bi-file-earmark-arrow-up"></i> Supporting Documents (PDF/Image)
-    </label>
-    <div class="input-group shadow-sm">
-      <input type="file" class="form-control" (change)="onFileSelected($event)">
-      <button class="btn btn-dark" type="button" (click)="upload()">
-        <i class="bi bi-upload"></i> Upload
+
+    </div>
+
+    <!-- ========== DOCUMENTS SECTION (for all roles) ========== -->
+  <!-- ========== DOCUMENTS SECTION ========== -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <h4 class="text-primary fw-bold heading">
+          <i class="bi bi-file-earmark-text"></i> Supporting Documents
+        </h4>
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <!-- 🔸 NEW APPLICATION: Multi-file select + auto-upload -->
+            <div *ngIf="!applicationId" class="row g-2 align-items-end">
+              <div class="col-md-8">
+                <label class="form-label fw-semibold">Select Files (will be uploaded on Save)</label>
+                <div class="input-group">
+                  <input 
+                    type="file" 
+                    class="form-control" 
+                    multiple
+                    (change)="onFilesSelected($event)">
+                  <span class="input-group-text bg-light">
+                    <i class="bi bi-files"></i>
+                  </span>
+                </div>
+              </div>
+              <!-- Preview selected files -->
+              <div class="col-12 mt-2" *ngIf="selectedFiles.length">
+                <div class="d-flex flex-wrap gap-2">
+                  <span *ngFor="let file of selectedFiles; let i = index" 
+                        class="badge bg-light text-dark border d-flex align-items-center gap-1">
+                    <i class="bi bi-file-earmark"></i> {{ file.name }}
+                    <i class="bi bi-x-circle-fill text-danger" style="cursor: pointer;" 
+                       (click)="removeSelectedFile(i)"></i>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- 🔸 EXISTING APPLICATION: Manual upload button -->
+            <div *ngIf="applicationId" class="row g-2 align-items-end">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Upload New Document</label>
+                <div class="input-group">
+                  <input type="file" class="form-control" #manualFileInput (change)="uploadManual(manualFileInput)">
+                  <button class="btn btn-dark" type="button" (click)="uploadManual(manualFileInput)" [disabled]="!canUpload()">
+                    <i class="bi bi-upload"></i> Upload
+                  </button>
+                </div>
+                <small class="text-muted" *ngIf="!canUpload()">Only pending applications can be modified</small>
+              </div>
+            </div>
+
+            <!-- Document List Table (same for both) -->
+            <div class="mt-3" *ngIf="documents.length > 0">
+              <h6 class="fw-bold">Uploaded Documents</h6>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered">
+                  <thead class="table-light">
+                    <tr>
+                      <th>File Name</th>
+                      <th>Uploaded On</th>
+                      <th>Status</th>
+                      <th *ngIf="isBankerOrAdmin">Verification</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let doc of documents; let i = index">
+                      <td>{{ doc.fileName }}</td>
+                      <td>{{ doc.uploadedAt | date:'medium' }}</td>
+                      <td>
+                        <span class="badge" [ngClass]="doc.isVerified ? 'bg-success' : 'bg-warning text-dark'">
+                          <i class="bi" [ngClass]="doc.isVerified ? 'bi-check-circle' : 'bi-clock-history'"></i>
+                          {{ doc.isVerified ? 'Verified' : 'Pending' }}
+                        </span>
+                      </td>
+                      <td *ngIf="isBankerOrAdmin">
+                        <div class="form-check form-switch" *ngIf="!doc.isVerified">
+                          <input class="form-check-input" type="checkbox" (click)="verifyDocument(i)">
+                          <label class="form-check-label small">Mark Verified</label>
+                        </div>
+                        <span *ngIf="doc.isVerified" class="text-success small">
+                          <i class="bi bi-check-circle"></i> Verified by {{ doc.verifiedBy?.fullName || 'Banker' }}
+                          <br><small>{{ doc.verifiedAt | date:'short' }}</small>
+                        </span>
+                      </td>
+                      <td>
+                        <a [href]="'http://localhost:3000/' + doc.filePath" target="_blank" 
+                           class="btn btn-sm btn-outline-secondary">
+                          <i class="bi bi-eye"></i> View
+                        </a>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div *ngIf="documents.length === 0 && applicationId" class="text-muted small">
+              No documents uploaded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== APPROVAL WORKFLOW – Banker/Admin only ========== -->
+    <div class="row mt-4" *ngIf="isBankerOrAdmin && applicationId">
+      <div class="col-12">
+        <h4 class="text-primary fw-bold heading">
+          <i class="bi bi-check2-circle"></i> Loan Review
+        </h4>
+        <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">Current Status</label>
+                <div>
+                  <span class="badge fs-6 p-2" [ngClass]="statusBadgeClass(loanForm.get('applicationStatus')?.value)">
+                    <i [ngClass]="statusIconClass(loanForm.get('applicationStatus')?.value)"></i>
+                    {{ loanForm.get('applicationStatus')?.value | uppercase }}
+                  </span>
+                </div>
+              </div>
+              <div class="col-md-8" *ngIf="loanForm.get('applicationStatus')?.value === 'pending'">
+  <div class="d-flex gap-2 justify-content-end">
+    
+    <button type="button" class="btn btn-success" (click)="openApprovalModal()">
+      <i class="bi bi-check-circle"></i> Approve
+    </button>
+    
+    <button type="button" class="btn btn-danger" (click)="openRejectionModal()">
+      <i class="bi bi-x-circle"></i> Reject
+    </button>
+    
+    <button type="button" class="btn btn-warning" (click)="requestRevision()">
+      <i class="bi bi-arrow-counterclockwise"></i> Request Revision
+    </button>
+
+  </div>
+</div>
+              <div class="col-md-8" *ngIf="loanForm.get('applicationStatus')?.value !== 'pending'">
+                <div class="alert alert-info mb-0">
+                  <i class="bi bi-info-circle"></i> 
+                  This application was {{ loanForm.get('applicationStatus')?.value }} 
+                  <span *ngIf="reviewHistory.length">on {{ reviewHistory[reviewHistory.length-1].date | date:'medium' }}</span>.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== REVIEW HISTORY (visible to all) ========== -->
+    <div class="row mt-4" *ngIf="applicationId">
+      <div class="col-12">
+        <h4 class="text-primary fw-bold heading">
+          <i class="bi bi-clock-history"></i> Activity Timeline
+        </h4>
+        <div class="card shadow-sm">
+          <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+            <ul class="timeline" *ngIf="reviewHistory.length">
+              <li *ngFor="let event of reviewHistory" class="timeline-item pb-3">
+                <span class="timeline-icon" [ngClass]="event.action"></span>
+                <div class="timeline-content">
+                  <div class="d-flex justify-content-between">
+                    <h6 class="fw-bold mb-0">
+                      <i [ngClass]="timelineIcon(event.action)"></i> 
+                      {{ event.action | titlecase }}
+                    </h6>
+                    <small class="text-muted">{{ event.date | date:'medium' }}</small>
+                  </div>
+                  <p class="mb-0" *ngIf="event.comment">{{ event.comment }}</p>
+                  <small class="text-muted">by {{ event.reviewer?.fullName || event.reviewer?.username || 'System' }}</small>
+                </div>
+              </li>
+            </ul>
+            <div *ngIf="!reviewHistory.length" class="text-muted text-center">
+              No activity recorded yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== ACTION BUTTONS ========== -->
+    <div class="d-flex justify-content-center gap-2 mt-3">
+      <button *ngIf="!applicationId" type="submit" class="btn text-white" 
+              style="background: linear-gradient(to right, #00c6ff, #0072ff);"
+              [disabled]="isUploading">
+        <i class="bi bi-save"></i> {{ isUploading ? 'Saving...' : 'Save Application' }}
+      </button>
+      <button *ngIf="applicationId" type="submit" class="btn text-white"
+              style="background: linear-gradient(to right, #11998e, #38ef7d);">
+        <i class="bi bi-pencil-square"></i> Update
+      </button>
+      <button *ngIf="applicationId" type="button" (click)="onDelete()" class="btn text-white"
+              style="background: linear-gradient(to right, #ff5f6d, #ffc371);">
+        <i class="bi bi-trash"></i> Delete
       </button>
     </div>
-    
-    <div class="mt-2" *ngIf="loanForm.get('docPath')?.value">
-      <a *ngIf="loanForm.get('docPath')?.value"
-   [href]="'http://localhost:3000/' + loanForm.get('docPath')?.value"
-   target="_blank"
-   class="btn btn-sm btn-outline-success">
-   <i class="bi bi-file-earmark-pdf-fill"></i> View Uploaded Document
-</a>
-
-    </div>
-  </div>
-
-
-    </div>
-
-
- <div class="d-flex justify-content-center gap-2 mt-3">
-  
- <button *ngIf="!applicationId" type="button" (click)="submit()" class="btn text-white"
-  style="background: linear-gradient(to right, #00c6ff, #0072ff);">
-  <i class="bi bi-save"></i> Save Application
-</button>
-
-<button *ngIf="applicationId" type="button" (click)="submit()" 
-  class="btn text-white"
-  style="background: linear-gradient(to right, #11998e, #38ef7d);">
-  <i class="bi bi-pencil-square"></i> Update
-</button>
-
-<button *ngIf="applicationId" type="button" (click)="onDelete()" 
-  class="btn text-white"
-  style="background: linear-gradient(to right, #ff5f6d, #ffc371);">
-  <i class="bi bi-trash"></i> Delete
-</button>
-
-</div>
   </form>
 </div>
+
+<!-- ========== MODALS for Approval/Rejection ========== -->
+<!-- Approve Modal -->
+<!-- Approve Modal -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title"><i class="bi bi-check-circle"></i> Approve Loan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Remarks (optional)</label>
+        <textarea class="form-control" rows="3" 
+                  [(ngModel)]="approvalRemarks" 
+                  [ngModelOptions]="{standalone: true}"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-success" (click)="approveApplication()">
+          Confirm Approval
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header bg-danger text-white">
+        <h5 class="modal-title"><i class="bi bi-x-circle"></i> Reject Loan</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label">Rejection Reason <span class="text-danger">*</span></label>
+        <textarea class="form-control" rows="3" 
+                  [(ngModel)]="rejectionReason" 
+                  [ngModelOptions]="{standalone: true}"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger" (click)="rejectApplication()">Confirm Rejection</button>
+      </div>
+    </div>
+  </div>
+</div> 

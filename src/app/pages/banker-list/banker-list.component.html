@@ -1,50 +1,272 @@
 <div class="container my-4 p-4 shadow rounded bg-light">
-    <h2 class="mb-3 fw-bold text-center heading">
-        <span><i class="bi bi-person-badge-fill"></i></span>
-        User Details
-        <span><i class="bi bi-person-badge-fill"></i></span>
-    </h2>
-    <div class="table-responsive">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="fw-bold heading m-0">
+            <span><i class="bi bi-people-fill"></i></span>
+            User Management
+            <span class="badge bg-secondary">{{userList.length}} users</span>
+        </h2>
+        
+        <div class="d-flex gap-2">
+            <!-- Refresh Button -->
+            <button class="btn btn-outline-primary btn-sm" (click)="loadUsers()" title="Refresh">
+                <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+            
+            <!-- Filter Dropdown -->
+            <div class="dropdown">
+                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-funnel"></i> Filter by Role
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" (click)="applyFilter('All')">All Users</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" (click)="applyFilter('Admin')">Admins</a></li>
+                    <li><a class="dropdown-item" href="#" (click)="applyFilter('Banker')">Bankers</a></li>
+                    <li><a class="dropdown-item" href="#" (click)="applyFilter('Customer')">Customers</a></li>
+                </ul>
+            </div>
+            
+            <!-- Search Input -->
+            <div class="input-group input-group-sm" style="width: 250px;">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input type="text" class="form-control" placeholder="Search users..." 
+                       [(ngModel)]="searchTerm" (input)="applySearch()">
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-shield-check"></i> Admins</h5>
+                    <h3 class="card-text">{{getRoleCount('Admin')}}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-info">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-bank"></i> Bankers</h5>
+                    <h3 class="card-text">{{getRoleCount('Banker')}}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-people"></i> Customers</h5>
+                    <h3 class="card-text">{{getRoleCount('Customer')}}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-secondary">
+                <div class="card-body">
+                    <h5 class="card-title"><i class="bi bi-clock-history"></i> Total</h5>
+                    <h3 class="card-text">{{userList.length}}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Table -->
+    <div class="table-responsive " style="border-radius: 8px;">
         <table class="table table-striped table-bordered align-middle">
             <thead class="table-dark">
                 <tr>
-                    <th>Username</th>
-                    <th>Email ID</th>
+                    <th>#</th>
+                    <th (click)="sortBy('username')" class="sortable">
+                        Username <i class="bi bi-arrow-down-up"></i>
+                    </th>
+                    <th (click)="sortBy('emailId')" class="sortable">
+                        Email ID <i class="bi bi-arrow-down-up"></i>
+                    </th>
                     <th>Full Name</th>
-                    <th>Role</th>
+                    <th (click)="sortBy('role')" class="sortable">
+                        Role <i class="bi bi-arrow-down-up"></i>
+                    </th>
                     <th>Created Date</th>
                     <th>Project</th>
+                    <th class="text-center">Status</th>
                     <th class="text-center">Actions</th>
                 </tr>
             </thead>
- <tbody>
-    @for (user of userList; track user._id) {
-    <tr>
-        <td>{{ user.username }}</td>
-        <td>{{ user.emailId }}</td>
-        <td>{{ user.fullName }}</td>
-        <td>
-            <span class="badge" [ngClass]="{
-                'bg-danger': user.role === 'Admin',
-                'bg-primary': user.role === 'Banker',
-                'bg-info': user.role === 'Customer'
-            }">
-                {{ user.role }}
-            </span>
-        </td>
-        <td>{{ user.createdAt | date:'dd-MMM-yyyy' }}</td> 
-        <td>{{ user.projectName || 'N/A' }}</td>
-        <td class="text-center">
-            <button class="btn btn-sm btn-primary me-2"><i class="bi bi-pencil"></i></button>
-           <button class="btn btn-sm btn-danger"
-        (click)="deleteUser(user._id)">
-  <i class="bi bi-trash"></i>
-</button>
-
-        </td>
-    </tr>
-    }
-</tbody>
+            <tbody>
+                @for (user of filteredUsers; track user._id; let i = $index) {
+                <tr>
+                    <td class="text-muted">{{i + 1}}</td>
+                    <td>
+                        <strong>{{ user.username }}</strong>
+                        @if (user._id === currentUser?._id) {
+                        <span class="badge bg-warning text-dark ms-1">You</span>
+                        }
+                    </td>
+                    <td>{{ user.emailId }}</td>
+                    <td>{{ user.fullName }}</td>
+                    <td>
+                        <span class="badge" [ngClass]="{
+                            'bg-danger': user.role === 'Admin',
+                            'bg-primary': user.role === 'Banker',
+                            'bg-info': user.role === 'Customer'
+                        }">
+                            <i [ngClass]="{
+                                'bi-shield-check': user.role === 'Admin',
+                            }"></i>
+                            {{ user.role }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="text-muted">{{ user.createdAt | date:'dd-MMM-yyyy' }}</span>
+                        <br>
+                        <small class="text-muted">{{ user.createdAt | date:'hh:mm a' }}</small>
+                    </td>
+                    <td>
+                        <span class="badge bg-light text-dark border">
+                            {{ user.projectName || 'LoanApp_v19' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="badge bg-success">
+                            <i class="bi bi-check-circle"></i> Active
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <!-- View Details Button -->
+                        <button class="btn btn-sm btn-outline-info me-1" 
+                                (click)="viewUserDetails(user)"
+                                title="View Details">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        
+                        <!-- Edit Button (Only Admin can edit all, Banker can edit only Customers) -->
+                        @if (canEdit(user)) {
+                        <button class="btn btn-sm btn-outline-primary me-1" 
+                                (click)="openEditModal(user)"
+                                title="Edit User">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        }
+                        
+                        <!-- Delete Button (Only Admin can delete all, Banker can delete only Customers) -->
+                        @if (canDelete(user)) {
+                        <button class="btn btn-sm btn-outline-danger" 
+                                (click)="deleteUser(user._id, user.username)"
+                                title="Delete User">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                        } @else {
+                        <button class="btn btn-sm btn-outline-secondary" disabled title="No permission">
+                            <i class="bi bi-slash-circle"></i>
+                        </button>
+                        }
+                    </td>
+                </tr>
+                } @empty {
+                <tr>
+                    <td colspan="9" class="text-center py-4">
+                        <div class="text-muted">
+                            <i class="bi bi-people display-4"></i>
+                            <h5>No users found</h5>
+                            @if (searchTerm || currentFilter !== 'All') {
+                            <p>Try changing your search or filter</p>
+                            }
+                        </div>
+                    </td>
+                </tr>
+                }
+            </tbody>
         </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <div class="text-muted">
+            Showing {{filteredUsers.length}} of {{userList.length}} users
+        </div>
+        <nav aria-label="Page navigation">
+            <ul class="pagination pagination-sm">
+                <li class="page-item" [class.disabled]="currentPage === 1">
+                    <a class="page-link" href="#" (click)="changePage(currentPage - 1)">Previous</a>
+                </li>
+                @for (page of getPageNumbers(); track page) {
+                <li class="page-item" [class.active]="page === currentPage">
+                    <a class="page-link" href="#" (click)="changePage(page)">{{page}}</a>
+                </li>
+                }
+                <li class="page-item" [class.disabled]="currentPage === totalPages">
+                    <a class="page-link" href="#" (click)="changePage(currentPage + 1)">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<!-- Edit User Modal -->
+<!-- Edit User Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title"><i class="bi bi-person-lines-fill me-2"></i> User Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" *ngIf="selectedUser">
+                <div class="text-center mb-3">
+                    <div class="display-1 text-secondary"><i class="bi bi-person-circle"></i></div>
+                    <h4>{{selectedUser.fullName}}</h4>
+                    <span class="badge bg-primary">{{selectedUser.role}}</span>
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><strong>Username:</strong> {{selectedUser.username}}</li>
+                    <li class="list-group-item"><strong>Email:</strong> {{selectedUser.emailId}}</li>
+                    <li class="list-group-item"><strong>Project:</strong> {{selectedUser.projectName}}</li>
+                    <li class="list-group-item"><strong>Created:</strong> {{selectedUser.createdAt | date:'medium'}}</li>
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="editUserModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title"><i class="bi bi-pencil-square me-2"></i>Edit User</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" (click)="closeEditModal()"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="editForm" (ngSubmit)="saveUser()" *ngIf="showEditModal">
+                     <div class="mb-3">
+                        <label class="form-label fw-bold">Username</label>
+                        <input type="text" class="form-control" formControlName="username">
+                     </div>
+                     <div class="mb-3">
+                        <label class="form-label fw-bold">Email</label>
+                        <input type="email" class="form-control" formControlName="emailId">
+                     </div>
+                     <div class="mb-3">
+                        <label class="form-label fw-bold">Full Name</label>
+                        <input type="text" class="form-control" formControlName="fullName">
+                     </div>
+                     <div class="mb-3">
+                        <label class="form-label fw-bold">Role</label>
+                        <select class="form-select" formControlName="role">
+                            <option *ngFor="let role of availableRoles" [value]="role">{{role}}</option>
+                        </select>
+                     </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="closeEditModal()">Cancel</button>
+                <button type="button" class="btn btn-primary" (click)="saveUser()" [disabled]="editForm.invalid">Save Changes</button>
+            </div>
+        </div>
     </div>
 </div>

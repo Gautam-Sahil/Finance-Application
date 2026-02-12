@@ -40,32 +40,43 @@ export class LoginComponent {
     this.showregisterForm.set(!this.showregisterForm());
   }
 
- register() {
-  // Simple validation to ensure role is selected
+register() {
   if (!this.customerObj.role) {
-   toast.info("Please select a role before registering.");
+    toast.info("Please select a role before registering.");
     return;
   }
 
   this.http.post("http://localhost:3000/api/register", this.customerObj)
     .subscribe({
       next: (res: any) => {
-       toast.success("Registration successful for " + this.customerObj.role);
+        toast.success(res.message); // Uses message from server
         this.changeView(); // Switch back to login view
       },
       error: (err) => {
-      toast.error("Registration failed: " + (err.error.message || "Server Error"));
+        toast.error(err.error.message || "Registration failed"); // Shows "User already exists" if 409
       }
     });
 }
-  login() {
+
+// login.component.ts
+
+login() {
   this.http.post("http://localhost:3000/api/login", this.loginForm.value)
     .subscribe({
       next: (res: any) => {
+        // 🔴 CRITICAL FIX: Save the token using the EXACT key MasterService expects
+        localStorage.setItem('loanApp_token', res.token); 
+        
+        // Save user data for persistence
+        localStorage.setItem('loanUser', JSON.stringify(res.user));
+
+        // Update the signal in AuthService
+        this.authService.updateUser(res.user);
+
         toast.success('Logged in successfully', {
           description: `Welcome back, ${res.user.fullName}`
         });
-        this.authService.updateUser(res.user);
+
         this.router.navigateByUrl('dashboard');
       },
       error: (err) => {
