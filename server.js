@@ -167,7 +167,17 @@ const supportTicketSchema = new mongoose.Schema({
 
 const SupportTicket = mongoose.model('SupportTicket', supportTicketSchema);
 
+// ==================== AUDIT LOG SCHEMA ====================
+const auditLogSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // who performed action
+    action: { type: String, enum: ['CREATE', 'UPDATE', 'DELETE'], required: true },
+    collectionName: { type: String, required: true }, // 'User' or 'LoanApplication'
+    documentId: { type: mongoose.Schema.Types.ObjectId, required: true }, // the affected document
+    changes: { type: mongoose.Schema.Types.Mixed }, // store old/new values (for updates)
+    timestamp: { type: Date, default: Date.now }
+});
 
+const AuditLog = mongoose.model('AuditLog', auditLogSchema);
 
 
 // ==================== MULTER FILE UPLOAD ====================
@@ -200,6 +210,38 @@ function authMiddleware(req, res, next) {
         res.status(401).json({ message: "Invalid token" });
     }
 }
+
+// Audit log middleware for User
+userSchema.post('save', function(doc) {
+    // Only log if this is a new user (not update)
+    if (doc.isNew) {
+        const log = new AuditLog({
+            userId: doc._id, // user themselves created? For registration, we don't have req.user. We'll handle specially.
+            action: 'CREATE',
+            collectionName: 'User',
+            documentId: doc._id,
+            changes: { fullName: doc.fullName, emailId: doc.emailId, role: doc.role }
+        });
+        log.save().catch(err => console.error('Audit log error:', err));
+    }
+});
+
+// For updates
+
+
+loanApplicationSchema.post('save', function(doc) {
+    if (doc.isNew) {
+        const log = new AuditLog({
+            userId: doc.userId, // we'll store userId on loan
+            action: 'CREATE',
+            collectionName: 'LoanApplication',
+            documentId: doc._id,
+            changes: { fullName: doc.fullName, amount: doc.salary, status: doc.applicationStatus }
+        });
+        log.save().catch(err => console.error('Audit log error:', err));
+    }
+});
+
 
 // ==================== USER ROUTES ====================
 
@@ -303,6 +345,15 @@ app.put('/api/users/:id', authMiddleware, async (req, res) => {
         const updatedUser = await User.findByIdAndUpdate(userId, { $set: updates }, { new: true, runValidators: true }).select('-password');
         res.json({ message: "User updated successfully", user: updatedUser });
 
+        // after updating
+await createAuditLog(
+    req.user.id,   // the banker/admin doing the update
+    'UPDATE',
+    'User',
+    updatedUser._id,
+    updates   // the changes sent
+);
+
     } catch (error) {
         res.status(500).json({ message: "Update failed", error: error.message });
     }
@@ -314,6 +365,13 @@ app.delete('/api/users/:id', async (req, res) => {
         const deletedUser = await User.findByIdAndDelete(req.params.id);
         if (!deletedUser) return res.status(404).json({ message: 'User not found' });
         res.json({ message: 'User deleted successfully' });
+        await createAuditLog(
+    req.user.id,
+    'DELETE',
+    'User',
+    deletedUser._id,
+    { fullName: deletedUser.fullName, emailId: deletedUser.emailId }
+);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
@@ -382,6 +440,22 @@ async function createNotification(userId, title, message, link = '') {
         return notification;
     } catch (error) {
         console.error('Failed to create notification:', error);
+    }
+}
+
+// Helper to create audit log
+async function createAuditLog(userId, action, collectionName, documentId, changes) {
+    try {
+        const log = new AuditLog({
+            userId,
+            action,
+            collectionName,
+            documentId,
+            changes
+        });
+        await log.save();
+    } catch (error) {
+        console.error('Audit log error:', error);
     }
 }
 
@@ -562,6 +636,14 @@ app.put('/api/approve-loan/:id', authMiddleware, async (req, res) => {
 
         await loan.save();
 
+        await createAuditLog(
+    req.user.id,
+    'UPDATE',  // or could be 'APPROVE' if you add a custom action
+    'LoanApplication',
+    loan._id,
+    { applicationStatus: loan.applicationStatus, remarks: req.body.remarks || req.body.reason }
+);
+
         // Notify customer
         if (loan.userId) {
             await createNotification(
@@ -602,6 +684,13 @@ app.put('/api/reject-loan/:id', authMiddleware, async (req, res) => {
         });
 
         await loan.save();
+        await createAuditLog(
+    req.user.id,
+    'UPDATE',  // or could be 'APPROVE' if you add a custom action
+    'LoanApplication',
+    loan._id,
+    { applicationStatus: loan.applicationStatus, remarks: req.body.remarks || req.body.reason }
+);
 
         // Notify customer
         if (loan.userId) {
@@ -634,21 +723,44 @@ app.get('/api/review-history/:id', async (req, res) => {
 });
 
 // Update loan
-app.put('/api/update-loan/:id', async (req, res) => {
+app.put('/api/update-loan/:id', authMiddleware, async (req, res) => {
     try {
-        const updatedData = await LoanApplication.findByIdAndUpdate(req.params.id, req.body, { new: true });
+        const updatedData = await LoanApplication.findByIdAndUpdate(
+            req.params.id, 
+            req.body, 
+            { new: true }
+        );
         if (!updatedData) return res.status(404).json({ message: "Application not found" });
+
+        // 📝 AUDIT LOG – who performed the update
+        await createAuditLog(
+            req.user.id,                      // the banker/admin (or customer if they own it)
+            'UPDATE',
+            'LoanApplication',
+            updatedData._id,
+            req.body                           // changes made
+        );
+
         res.json({ message: "Updated successfully", data: updatedData });
     } catch (error) {
         res.status(400).json({ message: "Update error", error: error.message });
     }
 });
-
 // Delete loan
-app.delete('/api/delete-loan/:id', async (req, res) => {
+app.delete('/api/delete-loan/:id', authMiddleware, async (req, res) => {
     try {
         const result = await LoanApplication.findByIdAndDelete(req.params.id);
         if (!result) return res.status(404).json({ message: "Application not found" });
+
+        // 📝 AUDIT LOG
+        await createAuditLog(
+            req.user.id,
+            'DELETE',
+            'LoanApplication',
+            result._id,
+            { fullName: result.fullName, status: result.applicationStatus }
+        );
+
         res.json({ message: "Successfully deleted" });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -931,6 +1043,61 @@ app.delete('/api/tickets/:id', authMiddleware, async (req, res) => {
         const ticket = await SupportTicket.findByIdAndDelete(req.params.id);
         if (!ticket) return res.status(404).json({ message: 'Ticket not found' });
         res.json({ message: 'Ticket deleted' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// ==================== AUDIT LOG ROUTES ====================
+
+// Get audit logs with filtering and pagination
+app.get('/api/audit-logs', authMiddleware, async (req, res) => {
+    try {
+        const { page = 1, limit = 20, collection, userId, action, startDate, endDate } = req.query;
+        const filter = {};
+
+        // Role-based access: customers see only their own logs
+        if (req.user.role === 'Customer') {
+            filter.userId = req.user.id;
+        }
+
+        if (collection) filter.collectionName = collection;
+        if (userId && req.user.role !== 'Customer') filter.userId = userId; // only non-customers can filter by other users
+        if (action) filter.action = action;
+        if (startDate || endDate) {
+            filter.timestamp = {};
+            if (startDate) filter.timestamp.$gte = new Date(startDate);
+            if (endDate) filter.timestamp.$lte = new Date(endDate);
+        }
+
+        const total = await AuditLog.countDocuments(filter);
+        const logs = await AuditLog.find(filter)
+            .populate('userId', 'fullName email role')
+            .sort({ timestamp: -1 })
+            .skip((page - 1) * limit)
+            .limit(parseInt(limit));
+
+        res.json({
+            logs,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / limit)
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get a single audit log by ID (optional)
+app.get('/api/audit-logs/:id', authMiddleware, async (req, res) => {
+    try {
+        const log = await AuditLog.findById(req.params.id).populate('userId', 'fullName email');
+        if (!log) return res.status(404).json({ message: 'Log not found' });
+        // Check permission: customer can only see if it's their own
+        if (req.user.role === 'Customer' && log.userId?._id.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+        res.json(log);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

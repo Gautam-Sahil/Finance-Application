@@ -1,0 +1,34 @@
+.text-dark-green { color: #064e3b; }
+.bg-success-subtle { background-color: #d1fae5; }
+.bg-primary-subtle { background-color: #dbeafe; }
+.bg-danger-subtle { background-color: #fee2e2; }
+.bg-secondary-subtle { background-color: #f3f4f6; }
+
+.log-card {
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid transparent;
+}
+.log-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.05) !important;
+}
+
+.icon-box {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pagination .page-link {
+  color: #064e3b;
+  cursor: pointer;
+}
+.pagination .active .page-link {
+  background-color: #059669;
+  border-color: #059669;
+  color: white;
+}

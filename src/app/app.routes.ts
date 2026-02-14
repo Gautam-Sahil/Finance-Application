@@ -11,6 +11,8 @@ import { EmiCalculatorComponent } from './pages/emi-calculator/emi-calculator.co
 import { SupportTicketListComponent } from './pages/support-ticket/support-ticket-list.component';
 import { TicketFormComponent } from './pages/support-ticket/support-ticket.component';
 import { TicketDetailComponent } from './pages/support-ticket/ticket-detail.component';
+import { AuditLogComponent } from './pages/audit-log/audit-log.component';
+
 
 
 export const routes: Routes = [
@@ -30,6 +32,7 @@ export const routes: Routes = [
     { path: 'emi-calculator', component: EmiCalculatorComponent},
       { path: 'support-tickets', component: SupportTicketListComponent},
         { path: 'support-tickets/new', component: TicketFormComponent} ,
-          { path: 'support-tickets/:id', component: TicketDetailComponent}   
+          { path: 'support-tickets/:id', component: TicketDetailComponent},
+            { path: 'audit-log', component: AuditLogComponent}     
 
 ];

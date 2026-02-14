@@ -58,6 +58,16 @@
         <span class="link-text">Customer Support</span>
       </a>
 
+     
+      @if (authService.currentUserSignal()?.role !== 'Customer') {
+   <a routerLink="/audit-log" routerLinkActive="active"  class="nav-item dummy">
+        <i class="bi bi-headset"></i>
+        <span class="link-text">Audit Log</span>
+      </a>
+
+}
+
+
     </nav>
   </aside>
 

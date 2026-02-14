@@ -1,0 +1,163 @@
+<div class="container-fluid p-4">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark-green m-0">
+        <i class="bi bi-journal-check me-2"></i>Audit Logs
+      </h2>
+      <p class="text-muted small m-0">Complete history of changes in the system</p>
+    </div>
+    <div>
+      <span class="badge bg-secondary">{{ total() }} entries</span>
+    </div>
+  </div>
+
+  <!-- Filters Card -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Collection</label>
+          <select class="form-select" [(ngModel)]="collectionFilter" (change)="applyFilters()">
+            <option value="">All</option>
+            <option value="LoanApplication">Loan Applications</option>
+            <option value="User">Users</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Action</label>
+          <select class="form-select" [(ngModel)]="actionFilter" (change)="applyFilters()">
+            <option value="">All</option>
+            <option value="CREATE">Create</option>
+            <option value="UPDATE">Update</option>
+            <option value="DELETE">Delete</option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">Start Date</label>
+          <input type="date" class="form-control" [(ngModel)]="startDate" (change)="applyFilters()">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label fw-semibold">End Date</label>
+          <input type="date" class="form-control" [(ngModel)]="endDate" (change)="applyFilters()">
+        </div>
+        @if (currentUser()?.role !== 'Customer') {
+          <div class="col-md-2">
+            <label class="form-label fw-semibold">User</label>
+            <select class="form-select" [(ngModel)]="selectedUserId" (change)="applyFilters()">
+              <option value="">All Users</option>
+              @for (user of users; track user._id) {
+                <option [value]="user._id">{{ user.fullName }} ({{ user.role }})</option>
+              }
+            </select>
+          </div>
+        }
+        <div class="col-md-2 d-flex align-items-end">
+          <button class="btn btn-outline-secondary w-100" (click)="resetFilters()">
+            <i class="bi bi-arrow-counterclockwise"></i> Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Logs List -->
+  <div class="logs-container">
+    @if (logs().length === 0) {
+      <div class="text-center py-5 text-muted bg-white rounded shadow-sm">
+        <i class="bi bi-clipboard-x fs-1"></i>
+        <p class="mt-2">No audit logs found</p>
+      </div>
+    }
+
+    @for (log of logs(); track log._id) {
+      <div class="card mb-3 border-0 shadow-sm log-card" [class]="getActionBg(log.action)">
+        <div class="card-body">
+          <div class="d-flex align-items-start gap-3">
+            <!-- Icon -->
+            <div class="icon-box bg-white shadow-sm">
+              <i class="bi {{ getActionIcon(log.action) }}" style="font-size: 1.5rem;"></i>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between align-items-start flex-wrap">
+                <div>
+                  <span class="badge bg-dark me-2">{{ log.collectionName }}</span>
+                  <strong class="text-dark">{{ log.action }}</strong>
+                  <span class="text-muted mx-2">·</span>
+                 <span>
+  <i class="bi bi-person-circle me-1"></i>
+  {{ log.userId?.fullName || 'System' }}
+  @if (log.userId?.role) {
+    <span class="badge bg-secondary ms-1">{{ log.userId?.role }}
+</span>
+  }
+</span>
+                </div>
+                <small class="text-muted text-nowrap ms-2">
+                  <i class="bi bi-clock"></i> {{ log.timestamp | date:'medium' }}
+                </small>
+              </div>
+
+              <!-- Changes Preview -->
+            <!-- In the card body, after the timestamp line, replace the changes preview with: -->
+<div class="mt-2">
+  <div class="d-flex align-items-center gap-2 mb-1">
+    <span class="fw-semibold small">Changes:</span>
+    <button class="btn btn-sm btn-link p-0 text-muted" (click)="toggleRaw()" title="Toggle raw JSON">
+      <i class="bi" [ngClass]="showRawJson ? 'bi-filetype-json' : 'bi-table'"></i>
+    </button>
+  </div>
+
+  @if (showRawJson) {
+    <pre class="bg-light p-2 rounded small mb-0" style="max-height: 200px; overflow: auto;">{{ log.changes | json }}</pre>
+  } @else {
+    @let fields = formatChanges(log.changes);
+   @if (fields.length > 0) {
+      <div class="bg-light p-2 rounded small" style="max-height: 150px; overflow-y: auto;">
+        @for (field of fields; track field.key) {
+          <div class="d-flex mb-1">
+            <span class="fw-semibold me-2" style="min-width: 120px;">{{ field.key }}:</span>
+            <span class="text-break">{{ field.value }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <span class="text-muted small">No details</span>
+    }
+  }
+</div>
+
+              <!-- Link to affected entity -->
+              @if (getEntityLink(log)) {
+                <a [routerLink]="getEntityLink(log)" class="btn btn-sm btn-link p-0 mt-2 text-decoration-none text-success">
+                  <i class="bi bi-box-arrow-up-right"></i> View {{ log.collectionName }}
+                </a>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <nav class="mt-4">
+      <ul class="pagination justify-content-center">
+        <li class="page-item" [class.disabled]="page() === 1">
+          <button class="page-link" (click)="changePage(page() - 1)">Previous</button>
+        </li>
+        @for (p of [].constructor(totalPages()); track $index) {
+          <li class="page-item" [class.active]="p+1 === page()">
+            <button class="page-link" (click)="changePage(p+1)">{{ p+1 }}</button>
+          </li>
+        }
+        <li class="page-item" [class.disabled]="page() === totalPages()">
+          <button class="page-link" (click)="changePage(page() + 1)">Next</button>
+        </li>
+      </ul>
+    </nav>
+  }
+</div>

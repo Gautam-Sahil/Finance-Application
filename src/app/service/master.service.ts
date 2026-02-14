@@ -102,4 +102,10 @@ onSaveLoan(obj: any) {
   getReviewHistory(loanId: string) {
     return this.http.get<any[]>(`${this.baseUrl}/review-history/${loanId}`);
   }
+
+  // In master.service.ts
+getAuditLogs(params: any) {
+  const headers = this.getAuthHeaders();
+  return this.http.get(`${this.baseUrl}/audit-logs`, { headers, params });
+}
 }

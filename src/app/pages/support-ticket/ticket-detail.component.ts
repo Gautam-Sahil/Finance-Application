@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 
+import { MasterService } from '../../service/master.service';
 import { AuthService } from '../login/auth.service';
 import { toast } from 'ngx-sonner';
 import { SupportService, SupportTicket } from '../../service/support.service';
@@ -16,24 +17,25 @@ import { SupportService, SupportTicket } from '../../service/support.service';
 })
 export class TicketDetailComponent implements OnInit {
   private supportService = inject(SupportService);
+  private masterService = inject(MasterService);
   private authService = inject(AuthService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
 
   ticket = signal<SupportTicket | null>(null);
-currentUser = this.authService.currentUserSignal;
+  currentUser = this.authService.currentUserSignal;
   replyMessage = '';
   isUpdating = false;
 
-  // For banker/admin
   availableStatuses = ['open', 'in-progress', 'closed'];
   availablePriorities = ['low', 'medium', 'high'];
-  users: any[] = []; // For assignment – we'd need an endpoint to fetch bankers
+  availableAssignees: any[] = []; // for dropdown
 
   ngOnInit(): void {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadTicket(id);
+      this.loadAssignees();
     }
   }
 
@@ -44,6 +46,17 @@ currentUser = this.authService.currentUserSignal;
         toast.error('Ticket not found');
         this.router.navigate(['/support-tickets']);
       }
+    });
+  }
+
+  loadAssignees() {
+    this.masterService.getAllUsers().subscribe({
+      next: (users: any) => {
+        this.availableAssignees = users.filter(
+          (u: any) => u.role === 'Banker' || u.role === 'Admin'
+        );
+      },
+      error: () => console.warn('Failed to load assignees')
     });
   }
 
@@ -76,6 +89,25 @@ currentUser = this.authService.currentUserSignal;
         toast.error(`Failed to update ${field}`);
         this.isUpdating = false;
       }
+    });
+  }
+
+  deleteTicket() {
+    toast('Delete Ticket?', {
+      description: 'This action cannot be undone.',
+      action: {
+        label: 'Delete',
+        onClick: () => {
+          this.supportService.deleteTicket(this.ticket()!._id).subscribe({
+            next: () => {
+              toast.success('Ticket deleted');
+              this.router.navigate(['/support-tickets']);
+            },
+            error: (err) => toast.error('Delete failed', { description: err.message })
+          });
+        }
+      },
+      cancel: { label: 'Cancel' }
     });
   }
 
