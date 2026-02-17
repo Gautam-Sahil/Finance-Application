@@ -1,4 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://finance-app-backend.onrender.com/api' // Your future Render Backend
+  // 🟢 USE YOUR NEW RENDER URL HERE
+  apiUrl: 'https://finance-app-backend-14qy.onrender.com/api' 
 };

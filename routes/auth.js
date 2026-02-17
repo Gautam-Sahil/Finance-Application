@@ -12,7 +12,7 @@ passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: process.env.NODE_ENV === 'production' 
-      ? "https://finance-app-backend.onrender.com/api/auth/google/callback"
+      ? "https://finance-app-backend-14qy.onrender.com/api/auth/google/callback"
       : "http://localhost:3000/api/auth/google/callback"
   },
   async function(accessToken, refreshToken, profile, cb) {
