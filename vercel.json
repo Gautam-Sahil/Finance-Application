@@ -4,7 +4,7 @@
     {
       "src": "package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist/finance-application" }
+      "config": { "distDir": "dist/finance-application/browser" }
     }
   ],
   "routes": [

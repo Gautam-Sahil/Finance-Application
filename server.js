@@ -23,7 +23,7 @@ const socketIo = require('socket.io');
 
 const allowedOrigins = [
   "http://localhost:4200",
-  "https://finance-app.vercel.app" // change if vercel URL changes
+  "https://finance-application-teal.vercel.app" // change if vercel URL changes
 ];
 
 const io = socketIo(server, {

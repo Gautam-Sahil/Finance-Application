@@ -324,7 +324,7 @@ router.get('/auth/google/callback',
     });
 
    const frontendUrl = process.env.NODE_ENV === 'production'
-      ? "https://finance-app.vercel.app"
+      ? "https://finance-application-teal.vercel.app"
       : "http://localhost:4200";
 
     res.redirect(`${frontendUrl}/login?token=${token}&user=${encodeURIComponent(userJson)}`);
