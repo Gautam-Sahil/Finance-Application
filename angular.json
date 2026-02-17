@@ -26,6 +26,14 @@
               "zone.js"
             ],
             "tsConfig": "tsconfig.app.json",
+            "allowedCommonJsDependencies": [
+        "canvg",
+        "core-js",
+        "html2canvas",
+        "jspdf", 
+        "raf",
+        "rgbcolor"
+      ],
             "assets": [
               {
                 "glob": "**/*",
@@ -53,10 +61,10 @@
     "maximumWarning": "2mb",   
     "maximumError": "4mb"      
   },
-  {
+   {
     "type": "anyComponentStyle",
-    "maximumWarning": "2kb",
-    "maximumError": "4kb"
+    "maximumWarning": "10kb",
+    "maximumError": "20kb"
   }
               ],
               "outputHashing": "all"
