@@ -6,6 +6,9 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
 ![Socket.io](https://img.shields.io/badge/Socket.io-black?style=for-the-badge&logo=socket.io&badgeColor=010101)
 
+
+<img width="3320" height="1620" alt="finance" src="https://github.com/user-attachments/assets/63b92ba8-ae30-433e-bb68-348f551439e7" />
+
 > A full-stack **MEAN** (MongoDB, Express, Angular, Node.js) application for managing loan applications, tracking repayments, and facilitating communication between Bankers and Customers.
 
 ---
@@ -95,3 +98,4 @@ Follow these steps to run the project locally on your machine.
 ```bash
 git clone [https://github.com/Gautam-Sahil/Finance-Application.git](https://github.com/Gautam-Sahil/Finance-Application.git)
 cd Finance-Application
+
