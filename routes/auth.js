@@ -3,9 +3,11 @@ const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const { Resend } = require('resend');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // 🟢 CONFIGURE GOOGLE STRATEGY
 passport.use(new GoogleStrategy({
@@ -18,28 +20,23 @@ passport.use(new GoogleStrategy({
   async function(accessToken, refreshToken, profile, cb) {
     try {
         const User = mongoose.model('User');
-        
-        // 1. Check if user exists by Email
         let user = await User.findOne({ emailId: profile.emails[0].value });
 
         if (user) {
-            // User exists? Great. Update provider if needed.
             if (user.authProvider !== 'google') {
-                user.authProvider = 'google'; // Link account
+                user.authProvider = 'google';
                 await user.save();
             }
             return cb(null, user);
         } else {
-            // 2. User doesn't exist? CREATE NEW.
             const newUser = new User({
-                // Generate username: "GautamTiwari" + random number
                 username: profile.displayName.replace(/\s+/g, '') + Math.floor(Math.random() * 1000), 
                 emailId: profile.emails[0].value,
                 fullName: profile.displayName,
-                password: '', // No password for Google users
-                role: 'Customer', // Default role
-                isVerified: true, // Google emails are verified
-                authProvider: 'google' // 🟢 MARK AS GOOGLE USER
+                password: '',
+                role: 'Customer',
+                isVerified: true,
+                authProvider: 'google'
             });
             await newUser.save();
             return cb(null, newUser);
@@ -50,55 +47,32 @@ passport.use(new GoogleStrategy({
   }
 ));
 
-// Serialization
 passport.serializeUser((user, done) => done(null, user));
 passport.deserializeUser((user, done) => done(null, user));
 
-// 🟢 Configure Email Sender (Use Ethereal for testing, or Gmail App Password)
-
-const transporter = nodemailer.createTransport({
-    service: 'gmail',
-    host: 'smtp.gmail.com',
-    port: 587,              
-    secure: false,       
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-    },
-   
-    family: 4, 
-});
-// Helper: Generate 6-digit OTP
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
-// 1. REGISTER (Create inactive user & send OTP)
-// 1. REGISTER
-// 1. REGISTER (Smart Logic: Overwrite unverified users)
+// ------------------ REGISTER ------------------
 router.post('/register', async (req, res) => {
     try {
         const { username, emailId, fullName, password, role } = req.body;
         const User = mongoose.model('User');
 
-        // 🟢 STEP 1: Check if Email or Username already exists
         const existingUser = await User.findOne({ $or: [{ emailId }, { username }] });
         
         if (existingUser) {
             if (existingUser.isVerified) {
-                // 🔴 Case A: Real, verified user exists. Stop them.
                 if (existingUser.emailId === emailId) {
                     return res.status(400).json({ message: 'User with this email already exists' });
                 } else {
                     return res.status(400).json({ message: 'Username already taken' });
                 }
             } else {
-                // 🟡 Case B: Found an "Unverified" user (stale data). 
-                // DELETE IT so the user can try again!
                 await User.deleteOne({ _id: existingUser._id });
                 console.log(`🗑️ Deleted stale unverified user: ${existingUser.emailId}`);
             }
         }
 
-        // 🟢 STEP 2: Proceed with New Registration (Fresh Start)
         const hashedPassword = await bcrypt.hash(password, 10);
         const otp = generateOTP();
 
@@ -108,18 +82,18 @@ router.post('/register', async (req, res) => {
             fullName, 
             role,
             password: hashedPassword,
-            otp: otp,
+            otp,
             otpExpires: Date.now() + 10 * 60 * 1000, 
-            isVerified: false, // Inactive until verify-otp is called
+            isVerified: false,
             authProvider: 'local'
         });
 
         await newUser.save();
 
-        // 🟢 STEP 3: Send Email (Beautiful UI)
+        // ------------------ SEND EMAIL via Resend ------------------
         try {
-            await transporter.sendMail({
-                from: '"Finance App" <no-reply@financeapp.com>',
+            await resend.emails.send({
+                from: 'Finance App <no-reply@financeapp.com>',
                 to: emailId,
                 subject: 'Verify Your Finance App Account',
                 html: `
@@ -144,11 +118,9 @@ router.post('/register', async (req, res) => {
                 </div>
                 `
             });
-            console.log(` OTP sent to ${emailId}: ${otp}`);
+            console.log(`OTP sent to ${emailId}: ${otp}`);
         } catch (emailError) {
-            console.error(" Email Failed:", emailError.message);
-            // Don't fail the request, just log it. 
-            // In dev, you can see the OTP in the console below.
+            console.error("Email Failed:", emailError.message);
         }
 
         res.status(201).json({ message: 'OTP sent! Check your email.' });
@@ -158,38 +130,21 @@ router.post('/register', async (req, res) => {
         res.status(500).json({ message: 'Server Error' });
     }
 });
-// 2. VERIFY OTP (Activate account)
-// routes/auth.js - Replace the existing verify-otp route with this:
 
+// ------------------ VERIFY OTP ------------------
 router.post('/verify-otp', async (req, res) => {
     try {
         const { emailId, otp } = req.body;
-        
-
         const User = mongoose.model('User');
-        
-        // 1. Find User (Case Insensitive Email)
         const user = await User.findOne({ emailId: { $regex: new RegExp(`^${emailId}$`, 'i') } });
 
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
+        if (!user) return res.status(404).json({ message: 'User not found' });
+        if (user.otpExpires < Date.now()) return res.status(400).json({ message: 'OTP has expired. Please register again.' });
 
-        // 2. Check Expiry
-        if (user.otpExpires < Date.now()) {
-            return res.status(400).json({ message: 'OTP has expired. Please register again.' });
-        }
-        
-        // 3. SECURE CHECK: Convert both to Strings and Trim Spaces
-        const inputOtp = String(otp).trim();
-        const dbOtp = String(user.otp).trim();
-
-        if (inputOtp !== dbOtp) {
+        if (String(user.otp).trim() !== String(otp).trim()) {
             return res.status(400).json({ message: 'Invalid OTP. Please check your email again.' });
         }
 
-        // 4. Success
-        console.log(" Success! Activating user.");
         user.isVerified = true;
         user.otp = undefined;
         user.otpExpires = undefined;
@@ -198,11 +153,12 @@ router.post('/verify-otp', async (req, res) => {
         res.json({ message: 'Email verified! You can now login.' });
 
     } catch (err) {
-        console.error(" Server Error:", err);
+        console.error("Server Error:", err);
         res.status(500).json({ message: 'Server Error' });
     }
 });
-// 3. LOGIN (Check verification status)
+
+// ------------------ LOGIN ------------------
 router.post('/login', async (req, res) => {
     try {
         const { username, password } = req.body;
@@ -210,8 +166,6 @@ router.post('/login', async (req, res) => {
         const user = await User.findOne({ username });
 
         if (!user) return res.status(404).json({ message: 'User not found' });
-        
-        // 🔴 Prevent login if not verified
         if (!user.isVerified) return res.status(403).json({ message: 'Please verify your email first.' });
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -226,7 +180,7 @@ router.post('/login', async (req, res) => {
     }
 });
 
-// 4. FORGOT PASSWORD (Send OTP)
+// ------------------ FORGOT PASSWORD ------------------
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -240,9 +194,8 @@ router.post('/forgot-password', async (req, res) => {
         user.otpExpires = Date.now() + 10 * 60 * 1000;
         await user.save();
 
-      // 🔴 SEND EMAIL (Beautiful UI for Password Reset)
-        await transporter.sendMail({
-            from: '"Finance App" <no-reply@financeapp.com>', // 🟢 Updated Name
+        await resend.emails.send({
+            from: 'Finance App <no-reply@financeapp.com>',
             to: email,
             subject: 'Password Reset Request - Finance App',
             html: `
@@ -277,7 +230,7 @@ router.post('/forgot-password', async (req, res) => {
     }
 });
 
-// 5. RESET PASSWORD (Verify & Change)
+// ------------------ RESET PASSWORD ------------------
 router.post('/reset-password', async (req, res) => {
     try {
         const { email, otp, newPassword } = req.body;
@@ -300,35 +253,27 @@ router.post('/reset-password', async (req, res) => {
     }
 });
 
-// 1. Start Login
+// ------------------ GOOGLE OAUTH ------------------
 router.get('/auth/google',
   passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
-// 2. Callback (Redirect to Frontend)
 router.get('/auth/google/callback', 
   passport.authenticate('google', { failureRedirect: '/login' }),
   (req, res) => {
     const user = req.user;
-    
-    // Generate Token
-    const token = jwt.sign(
-        { id: user._id, role: user.role }, 
-        process.env.JWT_SECRET || 'secret', 
-        { expiresIn: '1d' }
-    );
+    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
 
-    // Prepare User Data for Frontend
     const userJson = JSON.stringify({
         _id: user._id,
         fullName: user.fullName,
         emailId: user.emailId,
         role: user.role,
-        username: user.username, // Send the generated username
-        authProvider: user.authProvider || 'local' // Send provider info
+        username: user.username,
+        authProvider: user.authProvider || 'local'
     });
 
-   const frontendUrl = process.env.NODE_ENV === 'production'
+    const frontendUrl = process.env.NODE_ENV === 'production'
       ? "https://finance-application-teal.vercel.app"
       : "http://localhost:4200";
 
