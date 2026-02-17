@@ -1,8 +1,10 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http'; // 👈 Import HttpHeaders
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { io, Socket } from 'socket.io-client';
 import { AuthService } from '../pages/login/auth.service';
 import { toast } from 'ngx-sonner';
+// 🟢 1. IMPORT ENVIRONMENT
+import { environment } from '../../environments/environment';
 
 export interface Notification {
   _id: string;
@@ -18,7 +20,11 @@ export class NotificationService {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private socket: Socket | null = null;
-  private baseUrl = 'http://localhost:3000';
+  
+  private apiUrl = environment.apiUrl; 
+  
+  private socketUrl = this.apiUrl.replace('/api', '');
+
   private isSocketConnected = false;
 
   notifications = signal<Notification[]>([]);
@@ -26,12 +32,12 @@ export class NotificationService {
 
   constructor() {
     this.initSocket();
-    this.loadNotifications(); // Now safe to call
+    this.loadNotifications();
   }
 
-  // ✅ Helper to get headers for this service
   private getHeaders() {
-    const token = localStorage.getItem('loanApp_token');
+    // 🟢 SAFE TOKEN CHECK
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem('loanApp_token') : null;
     return {
       headers: new HttpHeaders({
         'Authorization': `Bearer ${token}`
@@ -39,64 +45,62 @@ export class NotificationService {
     };
   }
 
- public initSocket() {
-  const currentUser = this.authService.currentUserSignal();
-  if (!currentUser) return;
+  public initSocket() {
+    // 🟢 SAFE CHECK FOR SSR (Server Side Rendering)
+    if (typeof window === 'undefined') return;
 
-  // Prevent duplicate connections
-  if (this.socket && this.socket.connected) {
-    // Just re-authenticate to be sure
-    this.socket.emit('authenticate', currentUser._id);
-    return; 
+    const currentUser = this.authService.currentUserSignal();
+    if (!currentUser) return;
+
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('authenticate', currentUser._id);
+      return; 
+    }
+
+    // 🟢 USE SOCKET URL (Root)
+    this.socket = io(this.socketUrl, { 
+      transports: ['websocket'],
+      autoConnect: true 
+    });
+
+    this.socket.on('connect', () => {
+      console.log('✅ Socket connected to:', this.socketUrl);
+      this.isSocketConnected = true;
+      this.socket?.emit('authenticate', currentUser._id);
+    });
+
+    this.socket.on('notification', (notification: Notification) => {
+      console.log('🔔 New notification:', notification);
+      this.notifications.update(list => [notification, ...list]);
+      this.unreadCount.update(c => c + 1);
+      toast.info(notification.title, { description: notification.message });
+    });
+
+    this.socket.on('disconnect', () => {
+      this.isSocketConnected = false;
+    });
   }
 
-  this.socket = io(this.baseUrl, { 
-    transports: ['websocket'],
-    // Ensure we don't auto-connect until we are ready
-    autoConnect: true 
-  });
-
-  this.socket.on('connect', () => {
-    console.log('✅ Socket connected');
-    this.isSocketConnected = true;
-    this.socket?.emit('authenticate', currentUser._id);
-  });
-
-  this.socket.on('notification', (notification: Notification) => {
-    console.log('🔔 New notification:', notification);
-    
-    // 🟢 Update signals immediately
-    this.notifications.update(list => [notification, ...list]);
-    this.unreadCount.update(c => c + 1);
-    
-    toast.info(notification.title, { description: notification.message });
-  });
-
-  this.socket.on('disconnect', () => {
-    this.isSocketConnected = false;
-  });
-}
   loadNotifications() {
     const currentUser = this.authService.currentUserSignal();
-    if (!currentUser) return; // Don't fetch if not logged in
+    if (!currentUser) return;
 
-    // ✅ FIX: Added headers
+    // 🟢 USE API URL (already includes /api, so just add /notifications)
     this.http.get<{ notifications: Notification[]; unreadCount: number }>(
-      `${this.baseUrl}/api/notifications`, 
+      `${this.apiUrl}/notifications`, 
       this.getHeaders()
     ).subscribe({
       next: (res) => {
         this.notifications.set(res.notifications);
         this.unreadCount.set(res.unreadCount);
       },
-      error: () => console.log('Notifications load failed (auth issue?)')
+      error: () => console.log('Notifications load failed')
     });
   }
 
   markAsRead(notificationId: string) {
-    // ✅ FIX: Added headers
     this.http.put(
-      `${this.baseUrl}/api/notifications/${notificationId}/read`, 
+      `${this.apiUrl}/notifications/${notificationId}/read`, 
       {}, 
       this.getHeaders()
     ).subscribe({
@@ -110,9 +114,8 @@ export class NotificationService {
   }
 
   markAllAsRead() {
-    // ✅ FIX: Added headers
     this.http.put(
-      `${this.baseUrl}/api/notifications/read-all`, 
+      `${this.apiUrl}/notifications/read-all`, 
       {}, 
       this.getHeaders()
     ).subscribe({

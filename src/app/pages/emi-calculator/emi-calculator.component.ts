@@ -7,6 +7,8 @@ import { MasterService } from '../../service/master.service';
 import { toast } from 'ngx-sonner';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+// 🟢 1. IMPORT ENVIRONMENT
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-emi-calculator',
@@ -19,6 +21,9 @@ export class EmiCalculatorComponent implements OnInit {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private masterService = inject(MasterService);
+
+  // 🟢 2. USE ENVIRONMENT VARIABLE
+  private baseUrl = environment.apiUrl; 
 
   // Calculator inputs
   loanAmount = signal<number>(500000);
@@ -53,7 +58,7 @@ export class EmiCalculatorComponent implements OnInit {
   ngOnInit() {
     this.calculateEMI();
     if (this.currentUser()) {
-      this.loadUserSalary(); // Pre-fill salary from latest application
+      this.loadUserSalary(); 
     }
   }
 
@@ -63,7 +68,8 @@ export class EmiCalculatorComponent implements OnInit {
     let tenure = this.tenure();
     if (this.tenureType === 'years') tenure *= 12;
 
-    this.http.post<any>('http://localhost:3000/api/calculate-emi', {
+    // 🟢 3. FIX URL
+    this.http.post<any>(`${this.baseUrl}/calculate-emi`, {
       amount, rate, tenure, tenureType: 'months'
     }).subscribe({
       next: (res) => {
@@ -76,7 +82,8 @@ export class EmiCalculatorComponent implements OnInit {
   }
 
   checkEligibility() {
-    this.http.post<any>('http://localhost:3000/api/check-eligibility', {
+    // 🟢 4. FIX URL
+    this.http.post<any>(`${this.baseUrl}/check-eligibility`, {
       monthlyIncome: this.monthlyIncome(),
       existingEmi: this.existingEmi(),
       creditScore: this.creditScore(),
@@ -93,7 +100,10 @@ export class EmiCalculatorComponent implements OnInit {
     });
   }
 
+  // ... (Rest of your methods like generateAmortization, exportToPDF, loadUserSalary are fine)
+  
   generateAmortization() {
+    // ... keep existing code ...
     const principal = this.loanAmount();
     const monthlyRate = this.interestRate() / (12 * 100);
     const monthlyEMI = this.emi();
@@ -118,7 +128,9 @@ export class EmiCalculatorComponent implements OnInit {
     this.showAmortization.set(true);
   }
 
-exportToPDF() {
+  // ... keep exportToPDF and others same ...
+  
+  exportToPDF() {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
 
@@ -225,20 +237,17 @@ exportToPDF() {
     doc.save(`EMI_Report_${new Date().getTime()}.pdf`);
   }
 
-
   loadUserSalary() {
-    // For simplicity, we fetch the user's latest application to get salary
     this.masterService.getAllApplications(1, 1, '', '').subscribe({
       next: (res: any) => {
         const latest = res.loans[0];
         if (latest && latest.salary) {
-          this.monthlyIncome.set(latest.salary / 12); // Assuming salary is annual
+          this.monthlyIncome.set(latest.salary / 12); 
         }
       }
     });
   }
 
-  // Slider formatters
   formatLabel(value: number): string {
     if (value >= 100000) return '₹' + (value / 100000).toFixed(1) + 'L';
     if (value >= 1000) return '₹' + (value / 1000).toFixed(0) + 'k';

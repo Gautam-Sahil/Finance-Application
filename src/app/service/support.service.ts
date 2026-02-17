@@ -1,6 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+// 🟢 1. IMPORT ENVIRONMENT
+import { environment } from '../../environments/environment';
 
 export interface TicketReply {
   _id?: string;
@@ -25,18 +27,21 @@ export interface SupportTicket {
 @Injectable({ providedIn: 'root' })
 export class SupportService {
   private http = inject(HttpClient);
-  private baseUrl = 'http://localhost:3000/api';
-  private tokenKey = 'loanApp_token'; // 🔴 Must match Login
+  
+  // 🟢 2. USE ENVIRONMENT VARIABLE
+  private baseUrl = environment.apiUrl;
+  
+  private tokenKey = 'loanApp_token';
 
   private getAuthHeaders(): HttpHeaders {
-    const token = localStorage.getItem(this.tokenKey);
+    // 🟢 SAFE LOCALSTORAGE CHECK
+    const token = typeof localStorage !== 'undefined' ? localStorage.getItem(this.tokenKey) : '';
     return new HttpHeaders({
       'Authorization': `Bearer ${token}`,
       'Content-Type': 'application/json'
     });
   }
 
-  // ✅ Added headers to all requests
   getTickets(): Observable<SupportTicket[]> {
     return this.http.get<SupportTicket[]>(`${this.baseUrl}/tickets`, { headers: this.getAuthHeaders() });
   }
