@@ -195,7 +195,7 @@ router.post('/forgot-password', async (req, res) => {
         await user.save();
 
         await resend.emails.send({
-            from: 'Finance App <no-reply@financeapp.com>',
+            from: 'Finance App <no-reply@gautamtiwari.top>',
             to: email,
             subject: 'Password Reset Request - Finance App',
             html: `
