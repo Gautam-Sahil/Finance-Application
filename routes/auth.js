@@ -93,7 +93,7 @@ router.post('/register', async (req, res) => {
         // ------------------ SEND EMAIL via Resend ------------------
         try {
             await resend.emails.send({
-                from: 'Finance App <no-reply@financeapp.com>',
+                from: 'Finance App <no-reply@gautamtiwari.top>',
                 to: emailId,
                 subject: 'Verify Your Finance App Account',
                 html: `
