@@ -40,26 +40,33 @@ export class LoginComponent implements OnInit {
     username: '', emailId: '', fullName: '', password: '', role: ''
   };
 
- ngOnInit() {
-    // 🟢 CATCH GOOGLE LOGIN RESPONSE
-    this.route.queryParams.subscribe(params => {
-      if (params['token']) {
-        // 1. Save Token
-        localStorage.setItem('loanApp_token', params['token']);
-        
-        // 2. Save User Data
-        if (params['user']) {
-          const user = JSON.parse(decodeURIComponent(params['user']));
-          localStorage.setItem('loanUser', JSON.stringify(user));
-          this.authService.updateUser(user);
-        }
-        
-        // 3. Redirect to Dashboard
-        this.router.navigateByUrl('/dashboard');
-        toast.success('Login Successful!');
+ngOnInit() {
+  this.route.queryParams.subscribe(params => {
+    const token = params['token'];
+    const userParam = params['user'];
+
+    if (token) {
+      // Clear query params immediately
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: {},
+        replaceUrl: true
+      });
+
+      localStorage.setItem('loanApp_token', token);
+
+      if (userParam) {
+        const user = JSON.parse(decodeURIComponent(userParam));
+        localStorage.setItem('loanUser', JSON.stringify(user));
+        this.authService.updateUser(user);
       }
-    });
-  }
+
+      toast.success('Login Successful!');
+      this.router.navigateByUrl('/dashboard');
+    }
+  });
+}
+
   // --- ACTIONS ---
 
   login() {
