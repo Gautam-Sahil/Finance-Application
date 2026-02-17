@@ -232,9 +232,12 @@
                   </td>
                   <td>{{ app.createdAt | date:'medium' }}</td>
                   <td>
-                    <a [routerLink]="['/loan-application-list', app._id]" class="btn btn-sm btn-outline-primary">
-                      <i class="bi bi-eye"></i> View
-                    </a>
+                   <a [routerLink]="['/loan-application-list']"
+   [queryParams]="{ id: app._id }"
+   class="btn btn-sm btn-outline-primary">
+  <i class="bi bi-eye"></i> View
+</a>
+
                   </td>
                 </tr>
               } @empty {
