@@ -48,16 +48,16 @@
     }
   ],
               "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "500kB",
-                  "maximumError": "1MB"
-                },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "4kB",
-                  "maximumError": "8kB"
-                }
+               {
+    "type": "initial",
+    "maximumWarning": "2mb",   
+    "maximumError": "4mb"      
+  },
+  {
+    "type": "anyComponentStyle",
+    "maximumWarning": "2kb",
+    "maximumError": "4kb"
+  }
               ],
               "outputHashing": "all"
             },
