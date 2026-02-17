@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../pages/login/auth.service';
+import { environment } from '../../../environments/environment';
 
 interface ChatMessage {
   text: string;
@@ -26,6 +27,8 @@ export class ChatWidgetComponent implements OnInit, AfterViewChecked {
   private http = inject(HttpClient);
   private authService = inject(AuthService);
   private router = inject(Router);
+
+  private apiUrl = environment.apiUrl;
 
   @ViewChild('chatMessages') private chatMessagesRef!: ElementRef;
 
@@ -87,7 +90,7 @@ ngOnInit() {
     this.message = '';
     this.isLoading.set(true);
 
-    this.http.post<any>('http://localhost:3000/api/chatbot/chat', 
+    this.http.post<any>(`${this.apiUrl}/chatbot/chat`, 
       { message: userMsgText },
       { headers: { Authorization: `Bearer ${localStorage.getItem('loanApp_token')}` } }
     ).subscribe({

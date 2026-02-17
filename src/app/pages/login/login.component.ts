@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } 
 import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from './auth.service';
 import { toast } from 'ngx-sonner';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-login',
@@ -154,8 +155,9 @@ export class LoginComponent implements OnInit {
   }
 
  socialLogin(provider: string) {
+  const rootUrl = environment.apiUrl.replace('/api', '');
     // Point this to your backend
-    window.location.href = `http://localhost:3000/api/auth/${provider}`;
+    window.location.href = `${rootUrl}/api/auth/${provider}`;
   }
 
 }

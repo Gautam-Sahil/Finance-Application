@@ -96,19 +96,18 @@ export class ProfileMenuComponent implements OnInit, OnDestroy {
     }
 
     // 2. Fetch FRESH data from Server to ensure Username exists
-    this.http.get<UserProfile>('http://localhost:3000/api/profile', {
-      headers: { Authorization: `Bearer ${localStorage.getItem('loanApp_token')}` }
-    }).subscribe({
-      next: (user: UserProfile) => {
-      console.log('Fetched Fresh User:', user); // 🟢 Debug Check
-      
-      // 3. Populate Form with Fresh Data
-      this.editProfileForm = {
-        username: user.username || '',
-        fullName: user.fullName || '',
-        emailId: user.emailId || user.email || '' 
-      };
-      
+    this.http.get<UserProfile>(`${this.masterService['baseUrl']}/profile`, { // Use dynamic URL
+  headers: { Authorization: `Bearer ${localStorage.getItem('loanApp_token')}` }
+}).subscribe({
+  next: (user: UserProfile) => {
+    console.log('Fetched Fresh User:', user);
+
+    this.editProfileForm = {
+      username: user.username || '',
+      fullName: user.fullName || '',
+      // 🟢 FIX: Prioritize emailId
+      emailId: user.emailId || user.email || '' 
+    };
       // Update local state to match
       this.currentUser = user;
       this.authService.updateUser(user);

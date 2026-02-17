@@ -1152,50 +1152,65 @@ app.get('/api/repayments/summary', authMiddleware, async (req, res) => {
 // ==================== PROFILE & PASSWORD MANAGEMENT ====================
 
 // Get current user profile
+// 🟢 NEW: Get Current User Profile (Fixes the blank fields issue)
 app.get('/api/profile', authMiddleware, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).select('-password');
         if (!user) return res.status(404).json({ message: "User not found" });
-        res.json(user);
+        
+        // Ensure we send back exactly what the frontend needs
+        res.json({
+            _id: user._id,
+            username: user.username,
+            fullName: user.fullName,
+            emailId: user.emailId, // 👈 Send emailId explicitly
+            role: user.role,
+            authProvider: user.authProvider
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
 
-// Update profile (username, fullName, emailId)
+// 🟢 NEW: Update Current User Profile
 app.put('/api/profile', authMiddleware, async (req, res) => {
     try {
         const userId = req.user.id;
-        const { username, fullName, emailId } = req.body;
+        const { fullName, emailId, username } = req.body;
 
-        // Check if username is taken (if changed)
+        // 1. Check if username is taken (if changing it)
         if (username) {
             const existingUser = await User.findOne({ username, _id: { $ne: userId } });
             if (existingUser) {
-                return res.status(409).json({ message: "Username already taken" });
+                return res.status(400).json({ message: 'Username already taken' });
             }
         }
 
-        // Check if email is taken (if changed)
-        if (emailId) {
-            const existingUser = await User.findOne({ emailId, _id: { $ne: userId } });
-            if (existingUser) {
-                return res.status(409).json({ message: "Email already in use" });
-            }
-        }
-
+        // 2. Update User
         const updatedUser = await User.findByIdAndUpdate(
             userId,
-            { $set: { username, fullName, emailId } },
+            { 
+                $set: { 
+                    fullName, 
+                    emailId, // 👈 Update the correct field name
+                    username 
+                } 
+            },
             { new: true, runValidators: true }
         ).select('-password');
 
-        res.json({ message: "Profile updated successfully", user: updatedUser });
+        res.json({ 
+            message: "Profile updated successfully", 
+            user: updatedUser 
+        });
+
+        // 3. Log it
+        await createAuditLog(userId, 'UPDATE', 'User', userId, { fullName, emailId });
+
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: "Update failed", error: error.message });
     }
 });
-
 // Change password
 app.put('/api/change-password', authMiddleware, async (req, res) => {
     try {

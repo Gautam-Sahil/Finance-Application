@@ -11,6 +11,7 @@ import {
 import { ActivatedRoute, Router } from '@angular/router';
 import { MasterService } from '../../service/master.service';
 import { toast } from 'ngx-sonner';
+import { environment } from '../../../environments/environment.prod';
 
 @Component({
   selector: 'app-new-loan-form',
@@ -25,6 +26,7 @@ export class NewLoanFormComponent implements OnInit {
   private masterService = inject(MasterService);
   private route = inject(ActivatedRoute);
   private router = inject(Router);
+  protected readonly serverUrl = environment.apiUrl.replace('/api', '');
 
   // Form
   loanForm!: FormGroup;

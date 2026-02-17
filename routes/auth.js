@@ -173,7 +173,17 @@ router.post('/login', async (req, res) => {
 
         const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
 
-        res.json({ token, user: { id: user._id, fullName: user.fullName, role: user.role, email: user.emailId } });
+        res.json({ 
+    token, 
+    user: { 
+        id: user._id, 
+        fullName: user.fullName, 
+        role: user.role, 
+        emailId: user.emailId, // 👈 Match Schema (was email)
+        username: user.username, // 👈 Add this (was missing)
+        authProvider: user.authProvider
+    } 
+});
 
     } catch (err) {
         res.status(500).json({ message: 'Server Error' });
