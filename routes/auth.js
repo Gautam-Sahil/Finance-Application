@@ -11,7 +11,9 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: "http://localhost:3000/api/auth/google/callback"
+    callbackURL: process.env.NODE_ENV === 'production' 
+      ? "https://finance-app-backend.onrender.com/api/auth/google/callback"
+      : "http://localhost:3000/api/auth/google/callback"
   },
   async function(accessToken, refreshToken, profile, cb) {
     try {
@@ -321,8 +323,11 @@ router.get('/auth/google/callback',
         authProvider: user.authProvider || 'local' // Send provider info
     });
 
-    // Redirect to Angular with data in URL
-    res.redirect(`http://localhost:4200/login?token=${token}&user=${encodeURIComponent(userJson)}`);
+   const frontendUrl = process.env.NODE_ENV === 'production'
+      ? "https://finance-app.vercel.app"
+      : "http://localhost:4200";
+
+    res.redirect(`${frontendUrl}/login?token=${token}&user=${encodeURIComponent(userJson)}`);
   }
 );
 
