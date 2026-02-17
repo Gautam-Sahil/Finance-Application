@@ -28,24 +28,40 @@
 
 ### 🔐 Authentication & Security
 * **Secure Login/Signup:** JWT-based authentication with encrypted passwords (Bcrypt).
-* **Google OAuth:** One-click login using Google.
-* **Role-Based Access Control (RBAC):** Distinct dashboards for **Admin**, **Banker**, and **Customer**.
-* **OTP Verification:** Email verification using Nodemailer/Resend.
+* **Google OAuth:** One-click seamless login using Google Identity Platform.
+* **Role-Based Access Control (RBAC):** Distinct dashboards and permission sets for **Admin**, **Banker**, and **Customer**.
+* **OTP Verification:** Secure email verification using Nodemailer/Resend API.
 
 ### 💸 Loan Management
-* **Loan Application Workflow:** Customers apply -> Bankers verify -> Admins approve/reject.
-* **EMI Calculator:** Real-time EMI calculation with amortization charts.
-* **PDF Export:** Generate professional loan offer letters and repayment schedules.
-* **Document Verification:** Bankers can view and verify uploaded documents.
+* **Loan Application Workflow:** End-to-end lifecycle: *Applied* -> *Verified* -> *Approved* -> *Disbursed*.
+* **EMI Calculator:** Interactive tool to estimate monthly payments with amortization schedules.
+* **PDF Export:** Generate professional Loan Offer Letters and detailed Repayment Schedules.
+* **Document Verification:** Bankers can preview uploaded proofs (PDF/Images) and mark them as verified.
+
+### 💳 Repayment & Accounting
+* **Repayment Tracking:** Dedicated module to track Paid, Pending, and Overdue EMIs.
+* **Transaction History:** View complete payment logs with dates and transaction references.
+* **Status Automation:** Auto-updates loan status based on repayment completion.
+
+### 🎫 Help Desk & Support
+* **Ticket System:** Customers can raise support tickets for issues or queries.
+* **Admin Resolution:** Bankers/Admins can view tickets, reply to queries, and update ticket status (Open/Closed).
+* **Priority Tagging:** Categorize issues by Low, Medium, or High priority.
 
 ### 🔔 Real-Time Updates
-* **Socket.io Integration:** Instant notifications for loan status changes (Approved, Rejected, Verified).
-* **In-App Alerts:** Bell icon with unread count badges.
-* **Chatbot:** Interactive support bot for quick queries.
+* **Socket.io Integration:** Instant push notifications for loan status changes (Approved, Rejected, Verified).
+* **In-App Alerts:** Bell icon with dynamic unread count badges.
+* **Interactive Chatbot:** Automated support bot for answering FAQs about eligibility and status.
 
 ### 📊 Dashboard & Analytics
-* **Visual Charts:** Loan trends, repayment history, and user statistics.
-* **Audit Logs:** Admin can track every sensitive action (User updates, Loan deletions).
+* **Visual Charts:** Interactive graphs showing Loan Trends, Repayment History, and User Distribution.
+* **Audit Logs:** Security module for Admins to track sensitive actions (User role changes, Loan deletions).
+* **Advanced Search:** Server-side pagination, searching, and filtering for managing large user bases.
+
+### 👤 User Profile Management
+* **Profile Customization:** Users can update personal details.
+* **Security Settings:** Dedicated "Change Password" flow with current password validation.
+* **Responsive Design:** Fully mobile-responsive UI built with **Bootstrap 5**.
 
 ---
 
@@ -104,5 +120,6 @@ cd Finance-Application
 ```
 ---
 **Developed with ❤️ by Gautam Tiwari**
+
 
 
