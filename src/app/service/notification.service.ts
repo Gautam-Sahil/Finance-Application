@@ -19,6 +19,7 @@ export class NotificationService {
   private authService = inject(AuthService);
   private socket: Socket | null = null;
   private baseUrl = 'http://localhost:3000';
+  private isSocketConnected = false;
 
   notifications = signal<Notification[]>([]);
   unreadCount = signal<number>(0);
@@ -38,25 +39,43 @@ export class NotificationService {
     };
   }
 
-  private initSocket() {
-    const currentUser = this.authService.currentUserSignal();
-    if (!currentUser) return;
+ public initSocket() {
+  const currentUser = this.authService.currentUserSignal();
+  if (!currentUser) return;
 
-    this.socket = io(this.baseUrl, { transports: ['websocket'] });
-
-    this.socket.on('connect', () => {
-      console.log('Socket connected');
-      this.socket?.emit('authenticate', currentUser._id);
-    });
-
-    this.socket.on('notification', (notification: Notification) => {
-      console.log('New notification:', notification);
-      this.notifications.update(list => [notification, ...list]);
-      this.unreadCount.update(c => c + 1);
-      toast.info(notification.title, { description: notification.message });
-    });
+  // Prevent duplicate connections
+  if (this.socket && this.socket.connected) {
+    // Just re-authenticate to be sure
+    this.socket.emit('authenticate', currentUser._id);
+    return; 
   }
 
+  this.socket = io(this.baseUrl, { 
+    transports: ['websocket'],
+    // Ensure we don't auto-connect until we are ready
+    autoConnect: true 
+  });
+
+  this.socket.on('connect', () => {
+    console.log('✅ Socket connected');
+    this.isSocketConnected = true;
+    this.socket?.emit('authenticate', currentUser._id);
+  });
+
+  this.socket.on('notification', (notification: Notification) => {
+    console.log('🔔 New notification:', notification);
+    
+    // 🟢 Update signals immediately
+    this.notifications.update(list => [notification, ...list]);
+    this.unreadCount.update(c => c + 1);
+    
+    toast.info(notification.title, { description: notification.message });
+  });
+
+  this.socket.on('disconnect', () => {
+    this.isSocketConnected = false;
+  });
+}
   loadNotifications() {
     const currentUser = this.authService.currentUserSignal();
     if (!currentUser) return; // Don't fetch if not logged in

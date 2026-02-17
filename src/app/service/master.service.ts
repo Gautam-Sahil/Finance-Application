@@ -1,5 +1,7 @@
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { BankerDashboardResponse, CustomerDashboardData } from '../dashboard.model';
 
 @Injectable({ providedIn: 'root' })
 export class MasterService {
@@ -26,6 +28,17 @@ export class MasterService {
     return new HttpHeaders(headersConfig);
   }
 
+
+  getCustomerDashboard(): Observable<CustomerDashboardData> {
+  const headers = this.getAuthHeaders();
+  return this.http.get<CustomerDashboardData>(`${this.baseUrl}/dashboard/customer`, { headers });
+}
+
+getBankerDashboard(): Observable<BankerDashboardResponse> {
+  const headers = this.getAuthHeaders();
+  return this.http.get<BankerDashboardResponse>(`${this.baseUrl}/dashboard/banker`, { headers });
+}
+
   // ---------- USERS ----------
   getAllUsers() { return this.http.get(`${this.baseUrl}/users`); }
   
@@ -38,16 +51,14 @@ export class MasterService {
   // ========== PROFILE & PASSWORD ==========
 updateProfile(profileData: any) {
   const headers = this.getAuthHeaders();
-  return this.http.put(`${this.baseUrl}/api/profile`, profileData, { headers });
+  return this.http.put(`${this.baseUrl}/profile`, profileData, { headers });
 }
 
 changePassword(passwordData: { currentPassword: string; newPassword: string }) {
   const headers = this.getAuthHeaders();
-  return this.http.put(`${this.baseUrl}/api/change-password`, passwordData, { headers });
+  return this.http.put(`${this.baseUrl}/change-password`, passwordData, { headers });
 }
 
-  // ---------- DASHBOARD ----------
-  getDashboardStats() { return this.http.get(`${this.baseUrl}/dashboard-stats`); }
 
   // ---------- LOAN APPLICATION ----------
 onSaveLoan(obj: any) { 
@@ -99,6 +110,27 @@ onSaveLoan(obj: any) {
     return this.http.put(`${this.baseUrl}/reject-loan/${loanId}`, data, { headers });
   }
 
+  // ========== REPAYMENT ==========
+getRepaymentLoans() {
+  const headers = this.getAuthHeaders();
+  return this.http.get(`${this.baseUrl}/repayments/loans`, { headers });
+}
+
+getRepaymentSchedule(loanId: string) {
+  const headers = this.getAuthHeaders();
+  return this.http.get(`${this.baseUrl}/repayments/loan/${loanId}`, { headers });
+}
+
+markRepaymentPaid(repaymentId: string) {
+  const headers = this.getAuthHeaders();
+  return this.http.post(`${this.baseUrl}/repayments/pay/${repaymentId}`, {}, { headers });
+}
+
+// Admin only: generate schedule for a loan
+generateRepaymentSchedule(loanId: string, data: any) {
+  const headers = this.getAuthHeaders();
+  return this.http.post(`${this.baseUrl}/repayments/generate/${loanId}`, data, { headers });
+}
   getReviewHistory(loanId: string) {
     return this.http.get<any[]>(`${this.baseUrl}/review-history/${loanId}`);
   }

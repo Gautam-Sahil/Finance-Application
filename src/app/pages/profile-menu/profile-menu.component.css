@@ -37,3 +37,11 @@
 .badge {
   margin-top: 4px;
 }
+
+/* Make sure modal and backdrop appear above everything */
+.modal {
+  z-index: 1100 !important;
+}
+.modal-backdrop {
+  z-index: 1090 !important;
+}

@@ -1,0 +1,97 @@
+<div class="repayment-container">
+  
+  <div class="d-flex justify-content-between align-items-center mb-5">
+    <div>
+      <h2 class="fw-bold text-dark m-0">Active Loans</h2>
+      <p class="text-muted small m-0">Overview of your current repayment schedules</p>
+    </div>
+    
+    @if (currentUser()?.role !== 'Customer') {
+      <div class="d-flex align-items-center gap-2 px-3 py-2 bg-white rounded-pill shadow-sm border">
+        <div class="icon-box-sm bg-primary-subtle text-primary rounded-circle">
+          <i class="bi bi-layers"></i>
+        </div>
+        <span class="fw-bold text-dark small">{{ loans().length }} Total Loans</span>
+      </div>
+    }
+  </div>
+
+  @if (loans().length === 0) {
+    <div class="empty-state">
+      <div class="empty-icon-circle mb-3">
+        <i class="bi bi-wallet2 text-muted"></i>
+      </div>
+      <h5 class="fw-bold">No Active Loans</h5>
+      <p class="text-muted">You don't have any loans currently in repayment.</p>
+    </div>
+  }
+
+  <div class="row g-4">
+    @for (loan of loans(); track loan._id) {
+      <div class="col-md-6 col-lg-4">
+        
+        <div class="loan-card h-100" (click)="viewLoan(loan._id)">
+          
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <span class="loan-id text-muted small">
+              <i class="bi bi-hash me-1"></i>{{ loan._id.slice(-6).toUpperCase() }}
+            </span>
+            <span class="status-badge" [class.closed]="loan.status === 'closed'">
+              {{ loan.status | titlecase }}
+            </span>
+          </div>
+
+          <div class="mb-4">
+            <label class="text-muted small fw-bold text-uppercase tracking-wide">Outstanding Balance</label>
+            <div class="d-flex align-items-baseline gap-2 mt-1">
+              <h2 class="fw-bold text-dark m-0">{{ loan.outstandingBalance | currency:'INR':'symbol':'1.0-0' }}</h2>
+              <span class="text-muted small">/ {{ loan.approvedAmount | currency:'INR':'symbol':'1.0-0' }}</span>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            @let progress = ((loan.approvedAmount - loan.outstandingBalance) / loan.approvedAmount * 100) || 0;
+            <div class="d-flex justify-content-between mb-2 small">
+              <span class="text-success fw-bold">Paid: {{ progress | number:'1.0-0' }}%</span>
+              <span class="text-muted">Left: {{ (100 - progress) | number:'1.0-0' }}%</span>
+            </div>
+            <div class="progress" style="height: 8px;">
+              <div class="progress-bar bg-gradient-primary" [style.width.%]="progress"></div>
+            </div>
+          </div>
+
+          <div class="stats-grid mb-4">
+            <div class="stat-item">
+              <div class="icon-box-xs bg-light text-primary mb-2">
+                <i class="bi bi-calendar-event"></i>
+              </div>
+              <small class="text-muted d-block">Next Due</small>
+              <span class="fw-semibold text-dark fs-6">
+                {{ loan.nextDueDate ? (loan.nextDueDate | date:'dd MMM') : 'N/A' }}
+              </span>
+            </div>
+
+            <div class="stat-item border-start ps-3">
+              <div class="icon-box-xs bg-light text-success mb-2">
+                <i class="bi bi-cash-stack"></i>
+              </div>
+              <small class="text-muted d-block">EMI Amount</small>
+              <span class="fw-semibold text-dark fs-6">
+                {{ loan.emi | currency:'INR':'symbol':'1.0-0' }}
+              </span>
+            </div>
+          </div>
+
+          <div class="mt-auto">
+            <button class="btn btn-light w-100 fw-bold d-flex justify-content-between align-items-center group-hover-btn" 
+                    (click)="$event.stopPropagation(); viewLoan(loan._id)">
+              <span>View Details</span>
+              <i class="bi bi-arrow-right text-primary transition-arrow"></i>
+            </button>
+          </div>
+
+        </div>
+        </div>
+    }
+  </div>
+</div>

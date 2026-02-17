@@ -1,89 +1,161 @@
-import { HttpClient } from '@angular/common/http';
-import { Component, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { AuthService } from './auth.service'; // Ensure path is correct
+import { FormsModule, ReactiveFormsModule, FormGroup, FormControl, Validators } from '@angular/forms';
+import { Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from './auth.service';
 import { toast } from 'ngx-sonner';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  // REMOVED AuthService from here
-  imports: [FormsModule, ReactiveFormsModule, CommonModule], 
+  imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './login.component.html',
-  styleUrl: './login.component.css'
+  styleUrls: ['./login.component.css']
 })
-export class LoginComponent {
-  showregisterForm = signal<boolean>(false);
-  
-  // INJECT the service here to make it available as 'this.authService'
-  private authService = inject(AuthService); 
-  private http = inject(HttpClient);
-  private router = inject(Router);
+export class LoginComponent implements OnInit {
+  authService = inject(AuthService);
+  router = inject(Router);
+  route = inject(ActivatedRoute);
 
-  customerObj: any = {
-    username: '',
-    emailId: '',
-    fullName: '',
-    password: '',
-    role: '', // You can change this or add a select box in the HTML
-    projectName: 'Loan Management System'
-};
+  // VIEW SIGNALS
+  isRegisterMode = signal(false);
+  isVerifyMode = signal(false);
+  isForgotPassword = signal(false);
+  isResetMode = signal(false); // 🟢 NEW: For entering OTP + New Pass
 
-  loginForm: FormGroup = new FormGroup({
+  // DATA
+  verificationEmail = '';
+  otpCode = '';
+  forgotEmail = '';
+  newPassword = ''; // 🟢 NEW
+
+  // LOGIN FORM
+  loginForm = new FormGroup({
     username: new FormControl('', [Validators.required]),
     password: new FormControl('', [Validators.required])
   });
 
-  changeView() {
-    this.showregisterForm.set(!this.showregisterForm());
-  }
+  customerObj: any = {
+    username: '', emailId: '', fullName: '', password: '', role: ''
+  };
 
-register() {
-  if (!this.customerObj.role) {
-    toast.info("Please select a role before registering.");
-    return;
-  }
-
-  this.http.post("http://localhost:3000/api/register", this.customerObj)
-    .subscribe({
-      next: (res: any) => {
-        toast.success(res.message); // Uses message from server
-        this.changeView(); // Switch back to login view
-      },
-      error: (err) => {
-        toast.error(err.error.message || "Registration failed"); // Shows "User already exists" if 409
-      }
-    });
-}
-
-// login.component.ts
-
-login() {
-  this.http.post("http://localhost:3000/api/login", this.loginForm.value)
-    .subscribe({
-      next: (res: any) => {
-        // 🔴 CRITICAL FIX: Save the token using the EXACT key MasterService expects
-        localStorage.setItem('loanApp_token', res.token); 
+ ngOnInit() {
+    // 🟢 CATCH GOOGLE LOGIN RESPONSE
+    this.route.queryParams.subscribe(params => {
+      if (params['token']) {
+        // 1. Save Token
+        localStorage.setItem('loanApp_token', params['token']);
         
-        // Save user data for persistence
-        localStorage.setItem('loanUser', JSON.stringify(res.user));
-
-        // Update the signal in AuthService
-        this.authService.updateUser(res.user);
-
-        toast.success('Logged in successfully', {
-          description: `Welcome back, ${res.user.fullName}`
-        });
-
-        this.router.navigateByUrl('dashboard');
-      },
-      error: (err) => {
-        toast.error('Authentication Failed', {
-          description: err.error.message || 'Please check your credentials'
-        });
+        // 2. Save User Data
+        if (params['user']) {
+          const user = JSON.parse(decodeURIComponent(params['user']));
+          localStorage.setItem('loanUser', JSON.stringify(user));
+          this.authService.updateUser(user);
+        }
+        
+        // 3. Redirect to Dashboard
+        this.router.navigateByUrl('/dashboard');
+        toast.success('Login Successful!');
       }
     });
+  }
+  // --- ACTIONS ---
+
+  login() {
+    this.authService.login(this.loginForm.value).subscribe({
+      next: (res) => {
+        toast.success(`Welcome back, ${res.user.fullName}`);
+        this.router.navigateByUrl('/dashboard');
+      },
+      error: (err) => toast.error(err.error.message || 'Login Failed')
+    });
+  }
+
+  register() {
+    this.authService.register(this.customerObj).subscribe({
+      next: (res: any) => {
+        toast.success('OTP Sent to email!');
+        this.verificationEmail = this.customerObj.emailId;
+        this.isVerifyMode.set(true); 
+        this.isRegisterMode.set(false);
+      },
+      error: (err) => toast.error(err.error.message || 'Registration Failed')
+    });
+  }
+
+  verifyOtp() {
+    this.authService.verifyEmail(this.verificationEmail, this.otpCode).subscribe({
+      next: (res: any) => {
+        toast.success('Account Verified! Please Login.');
+        this.isVerifyMode.set(false);
+        this.isRegisterMode.set(false);
+      },
+      error: (err) => toast.error(err.error.message || 'Invalid OTP')
+    });
+  }
+
+  cancelVerify() {
+  this.isVerifyMode.set(false);
+  this.isRegisterMode.set(true);
+  this.otpCode = '';
 }
+
+
+  // 1. Send OTP for Password Reset
+  sendResetLink() {
+    if (!this.forgotEmail) return;
+    this.authService.sendForgotPasswordOtp(this.forgotEmail).subscribe({
+      next: (res: any) => {
+        toast.success('OTP sent to your email.');
+        // 🟢 FIX: Don't go back to login. Go to Reset Mode.
+        this.isForgotPassword.set(false);
+        this.isResetMode.set(true); 
+      },
+      error: (err) => toast.error(err.error.message)
+    });
+  }
+
+  // 2. Submit New Password with OTP
+  submitResetPassword() {
+    const data = {
+      email: this.forgotEmail,
+      otp: this.otpCode,
+      newPassword: this.newPassword
+    };
+
+    this.authService.resetPassword(data).subscribe({
+      next: (res: any) => {
+        toast.success('Password changed successfully! Please login.');
+        this.isResetMode.set(false); // Go back to main login
+        this.otpCode = '';
+        this.newPassword = '';
+      },
+      error: (err) => toast.error(err.error.message || 'Reset failed')
+    });
+  }
+
+  // --- UI TOGGLES ---
+
+  changeView() {
+    this.isRegisterMode.update(val => !val);
+    this.isForgotPassword.set(false);
+    this.isResetMode.set(false);
+  }
+
+  toggleForgotPassword() {
+    this.isForgotPassword.update(val => !val);
+    this.isResetMode.set(false);
+  }
+
+  // Cancel reset and go back to login
+  cancelReset() {
+    this.isResetMode.set(false);
+    this.isForgotPassword.set(false);
+  }
+
+ socialLogin(provider: string) {
+    // Point this to your backend
+    window.location.href = `http://localhost:3000/api/auth/${provider}`;
+  }
+
 }

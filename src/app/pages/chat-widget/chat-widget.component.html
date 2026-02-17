@@ -1,0 +1,90 @@
+<div class="chat-wrapper">
+  
+  <button class="chat-toggle-btn shadow-lg" (click)="toggleChat()" [class.pulse]="!isOpen()">
+    @if (isOpen()) {
+      <i class="bi bi-chevron-down"></i>
+    } @else {
+      <i class="bi bi-chat-fill"></i>
+    }
+  </button>
+
+  <div class="chat-window shadow-lg" [class.open]="isOpen()">
+    
+    <div class="chat-header">
+      <div class="d-flex align-items-center gap-2">
+        <div class="bot-avatar-header bg-white text-primary">
+          <i class="bi bi-robot"></i>
+        </div>
+        <div>
+          <h6 class="mb-0 fw-bold">Finance Quick Support</h6>
+          <small ><span class="online-dot"></span> Online</small>
+        </div>
+      </div>
+      <button class="btn btn-sm btn-icon text-white" (click)="toggleChat()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <div class="chat-body" #chatMessages>
+      
+      @for (msg of messages(); track $index) {
+        <div class="message-row" [class.user-row]="msg.sender === 'user'">
+          
+          @if (msg.sender === 'bot') {
+            <div class="bot-avatar-sm">
+              <i class="bi bi-robot"></i>
+            </div>
+          }
+
+          <div class="message-bubble shadow-sm" 
+               [class.user-bubble]="msg.sender === 'user'" 
+               [class.bot-bubble]="msg.sender === 'bot'">
+            
+            <p class="mb-0" [innerHTML]="msg.text"></p>
+            
+            @if (msg.link) {
+              <button class="btn btn-sm btn-light mt-2 w-100 fw-bold small text-primary" 
+                      (click)="navigate(msg.link)">
+                {{ msg.actionText || 'View Details' }} <i class="bi bi-arrow-right"></i>
+              </button>
+            }
+            
+            <span class="msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+          </div>
+        </div>
+      }
+
+      @if (isLoading()) {
+        <div class="message-row">
+          <div class="bot-avatar-sm"><i class="bi bi-three-dots"></i></div>
+          <div class="message-bubble bot-bubble typing">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      }
+
+    </div>
+
+    <div class="quick-replies" *ngIf="!isLoading()">
+      @for (chip of quickReplies; track chip) {
+        <button class="chip-btn" (click)="sendQuickReply(chip)">{{ chip }}</button>
+      }
+    </div>
+
+    <div class="chat-footer">
+      <div class="input-group bg-light rounded-pill p-1 border">
+        <input type="text" class="form-control border-0 bg-transparent ps-3" 
+               placeholder="Ask anything..." 
+               [(ngModel)]="message" 
+               (keyup.enter)="sendMessage()">
+        <button class="btn btn-primary rounded-circle m-1" 
+                style="width: 40px; height: 40px;"
+                (click)="sendMessage()" 
+                [disabled]="!message.trim()">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

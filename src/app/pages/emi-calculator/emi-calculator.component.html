@@ -1,171 +1,203 @@
-<div class="container my-4">
-  <div class="row g-4">
-    <!-- Calculator Panel -->
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-          <h4 class="mb-0"><i class="bi bi-calculator"></i> EMI Calculator</h4>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Loan Amount</label>
-            <div class="d-flex align-items-center gap-2">
-              <span class="text-muted">₹</span>
-              <input type="number" class="form-control" [(ngModel)]="loanAmount" 
-                     (input)="calculateEMI()" min="10000" step="10000">
-            </div>
-            <input type="range" class="form-range" [value]="loanAmount()" 
-                   (input)="loanAmount.set(+$any($event.target).value); calculateEMI()" 
-                   min="10000" max="10000000" step="10000">
-            <div class="d-flex justify-content-between">
-              <small>₹10k</small>
-              <small>{{ formatLabel(loanAmount()) }}</small>
-              <small>₹1Cr</small>
-            </div>
-          </div>
+<div class="container-fluid p-4">
+  
+  <div class="mb-4">
+    <h2 class="fw-bold text-dark-green">Financial Tools</h2>
+    <p class="text-muted">Calculate your EMI and check loan eligibility instantly.</p>
+  </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Interest Rate (% p.a.)</label>
-            <div class="d-flex align-items-center gap-2">
-              <input type="number" class="form-control" [(ngModel)]="interestRate" 
-                     (input)="calculateEMI()" min="1" max="30" step="0.1">
-              <span class="text-muted">%</span>
+  <div class="row g-4">
+    
+    <div class="col-lg-7">
+      <div class="card border-0 shadow-sm h-100 calculator-card">
+        <div class="card-body p-4">
+          
+          <h5 class="fw-bold mb-4 text-primary">EMI Calculator</h5>
+
+          <div class="mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="fw-medium text-muted">Loan Amount</label>
+              <div class="input-group input-group-sm w-auto">
+                <span class="input-group-text border-0 bg-light fw-bold">₹</span>
+                <input type="number" class="form-control border-0 bg-light fw-bold text-end" 
+                       style="max-width: 120px;" [(ngModel)]="loanAmount" 
+                       (input)="calculateEMI()">
+              </div>
             </div>
-            <input type="range" class="form-range" [value]="interestRate()" 
-                   (input)="interestRate.set(+$any($event.target).value); calculateEMI()" 
-                   min="1" max="30" step="0.1">
+            <input type="range" class="form-range custom-range" 
+                   [value]="loanAmount()" 
+                   (input)="loanAmount.set(+$any($event.target).value); calculateEMI()"
+                   min="10000" max="10000000" step="10000">
           </div>
 
           <div class="mb-4">
-            <label class="form-label fw-semibold">Tenure</label>
-            <div class="d-flex gap-3">
-              <div class="flex-grow-1">
-                <input type="number" class="form-control" [(ngModel)]="tenure" 
-                       (input)="calculateEMI()" min="1" max="360">
-              </div>
-              <div class="btn-group" role="group">
-                <input type="radio" class="btn-check" name="tenureType" id="months" 
-                       [value]="'months'" [(ngModel)]="tenureType" (change)="calculateEMI()">
-                <label class="btn btn-outline-secondary" for="months">Months</label>
-                <input type="radio" class="btn-check" name="tenureType" id="years" 
-                       [value]="'years'" [(ngModel)]="tenureType" (change)="calculateEMI()">
-                <label class="btn btn-outline-secondary" for="years">Years</label>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="fw-medium text-muted">Interest Rate (% p.a)</label>
+              <div class="input-group input-group-sm w-auto">
+                <input type="number" class="form-control border-0 bg-light fw-bold text-end" 
+                       style="max-width: 80px;" [(ngModel)]="interestRate" 
+                       (input)="calculateEMI()">
+                <span class="input-group-text border-0 bg-light fw-bold">%</span>
               </div>
             </div>
-            <input type="range" class="form-range mt-2" [value]="tenure()" 
-                   (input)="tenure.set(+$any($event.target).value); calculateEMI()" 
+            <input type="range" class="form-range custom-range" 
+                   [value]="interestRate()" 
+                   (input)="interestRate.set(+$any($event.target).value); calculateEMI()"
+                   min="1" max="30" step="0.1">
+          </div>
+
+          <div class="mb-5">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <label class="fw-medium text-muted">Loan Tenure</label>
+              <div class="d-flex align-items-center bg-light rounded p-1">
+                <input type="number" class="form-control border-0 bg-transparent fw-bold text-end p-0 pe-2" 
+                       style="max-width: 60px;" [(ngModel)]="tenure" 
+                       (input)="calculateEMI()">
+                <div class="btn-group btn-group-sm" role="group">
+                  <input type="radio" class="btn-check" name="tenureType" id="months" 
+                         [value]="'months'" [(ngModel)]="tenureType" (change)="calculateEMI()">
+                  <label class="btn btn-xs rounded-start" 
+                         [class.btn-white]="tenureType === 'months'" for="months">Mo</label>
+                  
+                  <input type="radio" class="btn-check" name="tenureType" id="years" 
+                         [value]="'years'" [(ngModel)]="tenureType" (change)="calculateEMI()">
+                  <label class="btn btn-xs rounded-end" 
+                         [class.btn-white]="tenureType === 'years'" for="years">Yr</label>
+                </div>
+              </div>
+            </div>
+            <input type="range" class="form-range custom-range" 
+                   [value]="tenure()" 
+                   (input)="tenure.set(+$any($event.target).value); calculateEMI()"
                    [min]="1" [max]="tenureType === 'months' ? 360 : 30">
           </div>
 
-          <div class="card bg-light p-3">
-            <div class="row text-center">
-              <div class="col-4">
-                <small class="text-muted d-block">Monthly EMI</small>
-                <h3 class="text-primary mb-0">₹{{ emi() | number }}</h3>
+          <div class="row g-3 text-center mb-4">
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 bg-primary-subtle h-100">
+                <small class="text-primary fw-semibold d-block mb-1">Monthly EMI</small>
+                <h3 class="fw-bold text-primary mb-0">₹{{ emi() | number }}</h3>
               </div>
-              <div class="col-4">
-                <small class="text-muted d-block">Total Interest</small>
-                <h5 class="mb-0">₹{{ totalInterest() | number }}</h5>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 bg-light h-100">
+                <small class="text-muted fw-semibold d-block mb-1">Total Interest</small>
+                <h5 class="fw-bold text-dark mb-0">₹{{ totalInterest() | number }}</h5>
               </div>
-              <div class="col-4">
-                <small class="text-muted d-block">Total Payment</small>
-                <h5 class="mb-0">₹{{ totalPayment() | number }}</h5>
+            </div>
+            <div class="col-md-4">
+              <div class="p-3 rounded-3 bg-light h-100">
+                <small class="text-muted fw-semibold d-block mb-1">Total Payment</small>
+                <h5 class="fw-bold text-dark mb-0">₹{{ totalPayment() | number }}</h5>
               </div>
             </div>
           </div>
 
-          <div class="d-flex gap-2 mt-4">
-            <button class="btn btn-outline-primary" (click)="generateAmortization()">
-              <i class="bi bi-table"></i> Amortization
+          <div class="d-flex gap-3 justify-content-center">
+            <button class="btn btn-outline-dark px-4 rounded-pill" (click)="generateAmortization()">
+              View Schedule
             </button>
-            <button class="btn btn-outline-success" (click)="exportToPDF()">
-              <i class="bi bi-file-pdf"></i> Export PDF
+            <button class="btn btn-dark px-4 rounded-pill" (click)="exportToPDF()">
+              Download PDF
             </button>
           </div>
 
           @if (showAmortization()) {
-            <div class="mt-4">
-              <h5>Amortization Schedule</h5>
-              <div class="table-responsive" style="max-height: 300px;">
-                <table class="table table-sm table-striped">
-                  <thead>
+            <div class="mt-5">
+              <h6 class="fw-bold mb-3">Amortization Schedule (First 2 Years)</h6>
+              <div class="table-responsive rounded-3 border">
+                <table class="table table-hover mb-0 text-center align-middle" style="font-size: 0.9rem;">
+                  <thead class="bg-light">
                     <tr>
-                      <th>Month</th>
-                      <th>Opening</th>
-                      <th>EMI</th>
-                      <th>Interest</th>
-                      <th>Principal</th>
-                      <th>Closing</th>
+                      <th class="py-3 text-muted fw-semibold">Month</th>
+                      <th class="py-3 text-muted fw-semibold">Principal</th>
+                      <th class="py-3 text-muted fw-semibold">Interest</th>
+                      <th class="py-3 text-muted fw-semibold">Balance</th>
                     </tr>
                   </thead>
                   <tbody>
-                    @for (row of amortizationSchedule; track row.month) {
+                    @for (row of amortizationSchedule.slice(0, 24); track row.month) {
                       <tr>
-                        <td>{{ row.month }}</td>
-                        <td>₹{{ row.openingBalance | number }}</td>
-                        <td>₹{{ row.emi | number }}</td>
-                        <td>₹{{ row.interest | number }}</td>
-                        <td>₹{{ row.principal | number }}</td>
-                        <td>₹{{ row.closingBalance | number }}</td>
+                        <td class="text-muted">{{ row.month }}</td>
+                        <td class="text-success fw-medium">₹{{ row.principal | number }}</td>
+                        <td class="text-danger fw-medium">₹{{ row.interest | number }}</td>
+                        <td class="fw-bold">₹{{ row.closingBalance | number }}</td>
                       </tr>
                     }
                   </tbody>
                 </table>
               </div>
+              <div class="text-center mt-2">
+                <small class="text-muted">Showing first 24 months. Download PDF for full schedule.</small>
+              </div>
             </div>
           }
+
         </div>
       </div>
     </div>
 
-    <!-- Eligibility Panel -->
-    <div class="col-lg-6">
-      <div class="card shadow-sm">
-        <div class="card-header bg-success text-white">
-          <h4 class="mb-0"><i class="bi bi-check-circle"></i> Eligibility Check</h4>
-        </div>
-        <div class="card-body">
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Monthly Income (₹)</label>
-            <input type="number" class="form-control" [(ngModel)]="monthlyIncome" min="0" step="1000">
+    <div class="col-lg-5">
+      <div class="card border-0 shadow-sm h-100 eligibility-card">
+        <div class="card-body p-4">
+          <h5 class="fw-bold mb-4 text-success">Check Eligibility</h5>
+          
+          <div class="form-floating mb-3">
+            <input type="number" class="form-control bg-light border-0" id="income" 
+                   [(ngModel)]="monthlyIncome" placeholder="50000">
+            <label for="income" class="text-muted">Monthly Income (₹)</label>
           </div>
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Existing EMI (₹)</label>
-            <input type="number" class="form-control" [(ngModel)]="existingEmi" min="0" step="100">
+
+          <div class="form-floating mb-3">
+            <input type="number" class="form-control bg-light border-0" id="existingEmi" 
+                   [(ngModel)]="existingEmi" placeholder="0">
+            <label for="existingEmi" class="text-muted">Existing Obligations / EMI (₹)</label>
           </div>
-          <div class="mb-4">
-            <label class="form-label fw-semibold">Credit Score</label>
-            <select class="form-select" [(ngModel)]="creditScore">
-              <option value="750">750+ (Excellent)</option>
-              <option value="650">650-749 (Good)</option>
-              <option value="550">550-649 (Average)</option>
-              <option value="450">Below 550 (Poor)</option>
+
+          <div class="form-floating mb-4">
+            <select class="form-select bg-light border-0" id="cibil" [(ngModel)]="creditScore">
+              <option value="750">Excellent (750+)</option>
+              <option value="650">Good (650-749)</option>
+              <option value="550">Average (550-649)</option>
+              <option value="450">Poor (< 550)</option>
             </select>
+            <label for="cibil" class="text-muted">Credit Score</label>
           </div>
-          <button class="btn btn-success w-100" (click)="checkEligibility()">
-            Check Eligibility
+
+          <button class="btn btn-success w-100 py-3 rounded-3 fw-bold mb-4" (click)="checkEligibility()">
+            CHECK NOW
           </button>
 
           @if (eligibleAmount()) {
-            <div class="mt-4 p-3 border rounded" [class.bg-success-subtle]="isEligible()" 
-                 [class.bg-warning-subtle]="!isEligible()">
-              <h5 class="mb-3">{{ eligibilityMessage() }}</h5>
-              <div class="d-flex justify-content-between">
-                <span>Eligible Loan Amount:</span>
-                <strong class="text-primary">₹{{ eligibleAmount() | number }}</strong>
+            <div class="result-card p-4 rounded-3 text-center" 
+                 [class.eligible]="isEligible()" 
+                 [class.not-eligible]="!isEligible()">
+              
+              <div class="mb-3">
+                <i class="bi fs-1" [class.bi-check-circle-fill]="isEligible()" 
+                   [class.bi-x-circle-fill]="!isEligible()"></i>
               </div>
-              <div class="d-flex justify-content-between">
-                <span>Maximum EMI:</span>
-                <strong>₹{{ maxEmi() | number }}</strong>
-              </div>
-              <div class="d-flex justify-content-between">
-                <span>Requested Amount:</span>
-                <span>₹{{ loanAmount() | number }}</span>
+              
+              <h5 class="fw-bold mb-1">{{ isEligible() ? 'Congratulations!' : 'Almost There!' }}</h5>
+              <p class="small opacity-75 mb-3">{{ eligibilityMessage() }}</p>
+              
+              <div class="divider my-3"></div>
+
+              <div class="row">
+                <div class="col-6 border-end">
+                  <small class="d-block opacity-75">Eligible Amount</small>
+                  <h5 class="fw-bold mb-0">₹{{ eligibleAmount() | number }}</h5>
+                </div>
+                <div class="col-6">
+                  <small class="d-block opacity-75">Max EMI Limit</small>
+                  <h5 class="fw-bold mb-0">₹{{ maxEmi() | number }}</h5>
+                </div>
               </div>
             </div>
           }
+
         </div>
       </div>
     </div>
+
   </div>
 </div>

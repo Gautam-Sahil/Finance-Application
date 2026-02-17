@@ -1,0 +1,132 @@
+/* --- Layout --- */
+.repayment-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* --- Card Styles --- */
+.loan-card {
+  background: #ffffff;
+  border: 1px solid #f1f5f9; /* Subtle border */
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.01), 0 2px 4px -1px rgba(0, 0, 0, 0.01);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+}
+
+.loan-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.01);
+  border-color: #e2e8f0;
+}
+
+/* --- Typography & Badges --- */
+.tracking-wide {
+  letter-spacing: 0.05em;
+}
+
+.loan-id {
+  background-color: #f8fafc;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 30px;
+  background-color: #dbeafe; /* Light Blue */
+  color: #1e40af; /* Dark Blue */
+}
+
+.status-badge.closed {
+  background-color: #f1f5f9;
+  color: #64748b;
+}
+
+/* --- Progress Bar --- */
+.progress {
+  background-color: #f1f5f9;
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.bg-gradient-primary {
+  background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
+}
+
+/* --- Stats Grid --- */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.icon-box-xs {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.icon-box-sm {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- Buttons & Hover Effects --- */
+.btn-light {
+  background-color: #f8fafc;
+  border: 1px solid transparent;
+  color: #334155;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  transition: all 0.2s;
+}
+
+.loan-card:hover .btn-light {
+  background-color: #eff6ff; /* Light Blue on hover */
+  color: #2563eb;
+}
+
+.transition-arrow {
+  transition: transform 0.2s;
+}
+
+.loan-card:hover .transition-arrow {
+  transform: translateX(5px);
+}
+
+/* --- Empty State --- */
+.empty-state {
+  text-align: center;
+  padding: 4rem;
+  background: white;
+  border-radius: 20px;
+  border: 2px dashed #e2e8f0;
+}
+
+.empty-icon-circle {
+  width: 80px;
+  height: 80px;
+  background: #f8fafc;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  font-size: 2rem;
+}

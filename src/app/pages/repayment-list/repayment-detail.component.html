@@ -1,0 +1,169 @@
+<div class="detail-container">
+  <!-- Header -->
+  <div class="d-flex align-items-center gap-2 mb-4">
+    <button class="back-btn" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i> Back
+    </button>
+    <h2 class="page-title m-0">Repayment Schedule</h2>
+  </div>
+
+  @if (!loan) {
+    <div class="text-center py-5">
+      <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status">
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+  } @else {
+    <!-- Loan Summary Card -->
+    <div class="summary-card mb-4">
+      <div class="summary-header">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="mb-0 text-white"><i class="bi bi-info-circle me-2"></i>Loan Overview</h5>
+          <span class="badge bg-white text-dark px-3 py-2 rounded-pill">
+            {{ loan.status | titlecase }}
+          </span>
+        </div>
+      </div>
+      <div class="summary-body">
+        <div class="row g-4">
+          <div class="col-md-3">
+            <div class="summary-item">
+              <span class="label">Borrower</span>
+              <span class="value">{{ loan.fullName }}</span>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="summary-item">
+              <span class="label">Approved</span>
+              <span class="value">{{ (loan.approvedAmount || 0) | currency:'INR' }}</span>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="summary-item">
+              <span class="label">EMI</span>
+              <span class="value">{{ (loan.emi || 0) | currency:'INR' }}/mo</span>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="summary-item">
+              <span class="label">Outstanding</span>
+              <span class="value text-danger">{{ (loan.outstandingBalance || loan.approvedAmount || 0) | currency:'INR' }}</span>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="summary-item">
+              <span class="label">Next Due</span>
+              <span class="value">  {{ loan.nextDueDate ? (loan.nextDueDate | date:'fullDate') : 'N/A' }}</span>
+            </div>
+          </div>
+        </div>
+        @if (!loan.approvedAmount) {
+          <div class="alert alert-warning mt-4 mb-0">
+            <i class="bi bi-exclamation-triangle me-2"></i> Loan terms not set.
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Schedule Card -->
+    <div class="schedule-card">
+      <div class="schedule-header">
+        <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>EMI Schedule</h5>
+        @if (canEdit() && repayments.length === 0) {
+          <button class="btn btn-primary btn-sm" (click)="openTermModal()">
+            <i class="bi bi-gear"></i> Generate Schedule
+          </button>
+        }
+      </div>
+      <div class="schedule-body p-0">
+        @if (repayments.length === 0) {
+          <div class="text-center py-5">
+            <i class="bi bi-calendar-x display-4 text-muted"></i>
+            <p class="mt-3">No repayment schedule generated yet.</p>
+          </div>
+        } @else {
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Due Date</th>
+                  <th>Amount</th>
+                  <th>Principal</th>
+                  <th>Interest</th>
+                  <th>Status</th>
+                  @if (canEdit()) {
+                    <th>Action</th>
+                  }
+                </tr>
+              </thead>
+              <tbody>
+                @for (emi of repayments; track emi._id; let i = $index) {
+                  <tr>
+                    <td>{{ i + 1 }}</td>
+                    <td>{{ emi.dueDate | date:'dd MMM yyyy' }}</td>
+                    <td>{{ emi.amount | currency:'INR' }}</td>
+                    <td>{{ emi.principalPaid | currency:'INR' }}</td>
+                    <td>{{ emi.interestPaid | currency:'INR' }}</td>
+                    <td>
+                      <span class="badge rounded-pill" [ngClass]="{
+                        'bg-success': emi.status === 'paid',
+                        'bg-warning text-dark': emi.status === 'pending',
+                        'bg-danger': emi.status === 'overdue'
+                      }">{{ emi.status | titlecase }}</span>
+                    </td>
+                    @if (canEdit()) {
+                      <td>
+                        @if (emi.status === 'pending') {
+                          <button class="btn btn-sm btn-success rounded-pill" (click)="markAsPaid(emi._id)">
+                            <i class="bi bi-check-circle"></i> Mark Paid
+                          </button>
+                        }
+                      </td>
+                    }
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        }
+      </div>
+    </div>
+  }
+</div>
+
+<!-- Modal for setting loan terms -->
+@if (showTermModal) {
+  <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-gradient-primary text-white border-0">
+          <h5 class="modal-title"><i class="bi bi-gear"></i> Set Loan Terms</h5>
+          <button type="button" class="btn-close btn-close-white" (click)="showTermModal = false"></button>
+        </div>
+        <div class="modal-body p-4">
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Approved Amount (₹)</label>
+            <input type="number" class="form-control form-control-lg" [(ngModel)]="termAmount" min="0" step="1000">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Interest Rate (% p.a.)</label>
+            <input type="number" class="form-control form-control-lg" [(ngModel)]="termRate" min="0" step="0.1">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Tenure (months)</label>
+            <input type="number" class="form-control form-control-lg" [(ngModel)]="termTenure" min="1" step="1">
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Disbursement Date</label>
+            <input type="date" class="form-control form-control-lg" [(ngModel)]="termDate">
+          </div>
+        </div>
+        <div class="modal-footer border-0">
+          <button type="button" class="btn btn-outline-secondary btn-lg" (click)="showTermModal = false">Cancel</button>
+          <button type="button" class="btn btn-primary btn-lg px-4" (click)="submitTermsAndGenerate()">Generate</button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

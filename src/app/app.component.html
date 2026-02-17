@@ -1,14 +1,19 @@
+@if (!authService.currentUserSignal()) {
+  <div class="full-page">
+    <router-outlet></router-outlet>
+  </div>
+} @else {
 <div class="app-container" [class.collapsed]="isCollapsed">
 
   <aside class="sidebar">
     <nav class="sidebar-nav">
-       <div class="d-flex align-items-center gap-3">
+       <div class="sidebar-logo d-flex align-items-center gap-3">
         <h1 class="logo-text m-0">
           <span class="full-name" *ngIf="!isCollapsed">Finance App</span>
         </h1>
       </div>
       
-      <a routerLink="/dashboard" routerLinkActive="active" class="nav-item">
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }"  class="nav-item">
         <i class="bi bi-speedometer2"></i>
         <span class="link-text">Dashboard</span>
       </a>
@@ -26,6 +31,18 @@
         <i class="bi bi-file-earmark-plus"></i>
         <span class="link-text">Request Funds</span>
       </a>
+      @if (authService.currentUserSignal()?.role === 'Customer') {
+  <a routerLink="/repayments" routerLinkActive="active" class="nav-item">
+    <i class="bi bi-credit-card"></i>
+    <span class="link-text">My Loans</span>
+  </a>
+} @else {
+  <a routerLink="/repayments" routerLinkActive="active" class="nav-item">
+    <i class="bi bi-credit-card"></i>
+    <span class="link-text">Loan Repayments</span>
+  </a>
+}
+
           <a routerLink="/emi-calculator" routerLinkActive="active" class="nav-item">
         <i class="bi bi-calculator"></i>
           <span class="link-text">EMI Calculator</span>
@@ -91,7 +108,7 @@
         @if (authService.currentUserSignal()) {
           <div class="user-info text-end">
             <span class="greeting">
-              Hi, {{ authService.currentUserSignal()?.username || 'User' }}
+            Hi, {{ authService.currentUserSignal()?.fullName?.split(' ')[0] || 'User'}}
             </span>
           </div>
 
@@ -110,10 +127,11 @@
 
     <div class="page-container flex-grow-1">
       <router-outlet></router-outlet>
+      <app-chat-widget></app-chat-widget>
     </div>
 
   </div>
 
 </div>
-
+}
 <ngx-sonner-toaster position="bottom-right" richColors />

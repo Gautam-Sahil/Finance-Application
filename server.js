@@ -1,4 +1,9 @@
+
+const chatbotRoutes = require('./chatbot');
 require('dotenv').config();
+
+const passport = require('passport'); // 🟢 NEW
+const session = require('express-session'); // 🟢 NEW
 
 const express = require('express');
 const app = express();   // ✅ CREATE APP FIRST
@@ -10,6 +15,7 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -59,6 +65,14 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(cors());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+app.use(session({
+    secret: 'your_session_secret_key', 
+    resave: false,
+    saveUninitialized: true
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
 // MongoDB Connection
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log("Connected to MongoDB"))
@@ -67,16 +81,29 @@ mongoose.connect(process.env.MONGO_URI)
 // ==================== SCHEMAS ====================
 
 // User Schema
+// User Schema
 const userSchema = new mongoose.Schema({
     username: { type: String, required: true, unique: true },
     emailId: { type: String, required: true },
     fullName: { type: String, required: true },
-    password: { type: String, required: true },
+    
+    // 🟢 Password is NOT required for Google users
+    password: { type: String }, 
+    
     role: { type: String, default: 'Customer' },
     projectName: { type: String, default: 'LoanApp_v19' },
     docPath: { type: String, default: '' },
+    
+    // 🟢 Auth Provider (local vs google)
+    authProvider: { type: String, default: 'local' },
+
+    otp: { type: String },
+    otpExpires: { type: Date },
+    isVerified: { type: Boolean, default: false },
+
     createdAt: { type: Date, default: Date.now }
 }, { timestamps: true });
+
 
 const User = mongoose.model('User', userSchema);
 
@@ -130,10 +157,35 @@ const loanApplicationSchema = new mongoose.Schema({
     approvalRemarks: String,
     rejectionReason: String,
     isActive: { type: Boolean, default: true },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+     requestedAmount: Number,               // loan amount they applied for
+    approvedAmount: Number,                // actual amount approved (could be same)
+    interestRate: Number,                  // annual interest rate (e.g., 10.5)
+    tenureMonths: Number,                  // loan tenure in months
+    emi: Number,                           // calculated monthly EMI
+    disbursedDate: Date,                    // when loan was disbursed
+    nextDueDate: Date,                      // next EMI due date
+    outstandingBalance: Number,              // remaining principal
+    totalPaid: Number,                       // total amount paid so far
+    status: { type: String, default: 'active' } // active, closed, defaulted
 });
 
 const LoanApplication = mongoose.model('LoanApplication', loanApplicationSchema);
+
+const repaymentSchema = new mongoose.Schema({
+    loanId: { type: mongoose.Schema.Types.ObjectId, ref: 'LoanApplication', required: true },
+    dueDate: { type: Date, required: true },
+    amount: { type: Number, required: true },
+    principalPaid: Number,
+    interestPaid: Number,
+    paidDate: Date,                         // when actually paid
+    status: { type: String, enum: ['pending', 'paid', 'overdue'], default: 'pending' },
+    transactionId: String,                   // reference if any
+    paidBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // who recorded payment
+    createdAt: { type: Date, default: Date.now }
+});
+
+const Repayment = mongoose.model('Repayment', repaymentSchema);
 
 
 // ==================== NOTIFICATION SCHEMA ====================
@@ -245,49 +297,189 @@ loanApplicationSchema.post('save', function(doc) {
 
 // ==================== USER ROUTES ====================
 
-// Register
-app.post('/api/register', async (req, res) => {
-    try {
-        const { username, emailId, fullName, password, role, projectName } = req.body;
-        const existingUser = await User.findOne({ $or: [{ username }, { emailId }] });
-        if (existingUser) return res.status(409).json({ message: "User with this username or email already exists" });
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({
-            username, emailId, fullName, password: hashedPassword,
-            role: role || 'Customer',
-            projectName: projectName || 'LoanApp_v19'
+
+// Register
+app.use('/api', require('./routes/auth'));
+// ==================== DASHBOARD STATS (ENHANCED) ====================
+
+// Get customer dashboard stats
+app.get('/api/dashboard/customer', authMiddleware, async (req, res) => {
+    try {
+        if (req.user.role !== 'Customer') {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Get customer's loans (approved/disbursed)
+        const loans = await LoanApplication.find({
+            userId: req.user.id,
+            applicationStatus: { $in: ['approved', 'disbursed'] }
+        }).select('approvedAmount emi outstandingBalance nextDueDate status fullName');
+
+        const totalLoans = loans.length;
+        const totalOutstanding = loans.reduce((sum, l) => sum + (l.outstandingBalance || 0), 0);
+        const totalApproved = loans.reduce((sum, l) => sum + (l.approvedAmount || 0), 0);
+        const totalPaid = totalApproved - totalOutstanding;
+
+        // Get upcoming repayments for these loans (next 5)
+        const upcoming = await Repayment.find({
+            loanId: { $in: loans.map(l => l._id) },
+            status: 'pending',
+            dueDate: { $gte: new Date() }
+        })
+        .sort({ dueDate: 1 })
+        .limit(5)
+        .populate('loanId', 'fullName');
+
+        // Recent activity (last 5 review history events + repayments)
+        const recentActivity = [];
+
+        // Add repayments as activity
+        const recentRepayments = await Repayment.find({
+            loanId: { $in: loans.map(l => l._id) },
+            status: 'paid',
+            paidDate: { $exists: true }
+        })
+        .sort({ paidDate: -1 })
+        .limit(5)
+        .populate('loanId', 'fullName');
+
+        recentRepayments.forEach(r => {
+            recentActivity.push({
+                id: r._id,
+                title: `EMI paid for ${r.loanId.fullName}`,
+                status: 'paid',
+                date: r.paidDate
+            });
         });
-        await user.save();
-        res.status(201).json({ message: "User registered successfully" });
+
+        // Add application reviews
+        const reviews = await LoanApplication.find({
+            userId: req.user.id,
+            'reviewHistory.0': { $exists: true }
+        })
+        .sort({ 'reviewHistory.date': -1 })
+        .limit(5)
+        .select('reviewHistory fullName');
+
+        reviews.forEach(app => {
+            app.reviewHistory.forEach(r => {
+                recentActivity.push({
+                    id: r._id,
+                    title: `${r.action} for ${app.fullName}`,
+                    status: r.action,
+                    date: r.date
+                });
+            });
+        });
+
+        // Sort all activity by date desc and take 5
+        recentActivity.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        const recent = recentActivity.slice(0, 5);
+
+        // Payment history for chart (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        const paymentHistory = await Repayment.aggregate([
+            {
+                $match: {
+                    loanId: { $in: loans.map(l => l._id) },
+                    paidDate: { $gte: sixMonthsAgo },
+                    status: 'paid'
+                }
+            },
+            {
+                $group: {
+                    _id: { year: { $year: '$paidDate' }, month: { $month: '$paidDate' } },
+                    total: { $sum: '$amount' }
+                }
+            },
+            { $sort: { '_id.year': 1, '_id.month': 1 } }
+        ]);
+
+        res.json({
+            totalLoans,
+            totalOutstanding,
+            totalApproved,
+            totalPaid,
+            nextEmi: loans.filter(l => l.nextDueDate).sort((a, b) => a.nextDueDate - b.nextDueDate)[0] || null,
+            loans: loans.map(l => ({
+                _id: l._id,
+                name: l.fullName,
+                approvedAmount: l.approvedAmount,
+                emi: l.emi,
+                outstanding: l.outstandingBalance,
+                nextDue: l.nextDueDate,
+                progress: ((l.approvedAmount - l.outstandingBalance) / l.approvedAmount * 100) || 0
+            })),
+            upcoming,
+            recentActivity: recent,
+            paymentHistory
+        });
     } catch (error) {
-        res.status(500).json({ message: "Registration failed", error: error.message });
+        res.status(500).json({ message: error.message });
     }
 });
 
-// Login
-app.post('/api/login', async (req, res) => {
-    const { username, password } = req.body;
-    const user = await User.findOne({ username });
-    if (!user) return res.status(401).json({ message: "Invalid username or password" });
-
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid username or password" });
-
-    const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
-
-    res.json({
-        token,
-        user: {
-            _id: user._id,
-            username: user.username,
-            fullName: user.fullName,
-            emailId: user.emailId,
-            role: user.role,
-            projectName: user.projectName,
-            createdAt: user.createdAt
+// Get banker/admin dashboard stats
+app.get('/api/dashboard/banker', authMiddleware, async (req, res) => {
+    try {
+        if (!['Admin', 'Banker'].includes(req.user.role)) {
+            return res.status(403).json({ message: 'Access denied' });
         }
-    });
+
+        // Count by status
+        const statusCounts = await LoanApplication.aggregate([
+            { $group: { _id: '$applicationStatus', count: { $sum: 1 } } }
+        ]);
+
+        // Monthly applications trend (last 6 months)
+        const sixMonthsAgo = new Date();
+        sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5);
+        const monthlyTrend = await LoanApplication.aggregate([
+            { $match: { createdAt: { $gte: sixMonthsAgo } } },
+            { $group: {
+                _id: { year: { $year: '$createdAt' }, month: { $month: '$createdAt' } },
+                count: { $sum: 1 }
+            }},
+            { $sort: { '_id.year': 1, '_id.month': 1 } }
+        ]);
+
+        // Total approved amount
+        const totalApproved = await LoanApplication.aggregate([
+            { $match: { applicationStatus: 'approved' } },
+            { $group: { _id: null, total: { $sum: '$approvedAmount' } } }
+        ]);
+
+        // Recent applications (last 5)
+        const recent = await LoanApplication.find()
+            .sort({ createdAt: -1 })
+            .limit(5)
+            .populate('userId', 'fullName')
+            .select('fullName applicationStatus createdAt');
+
+        // Repayment summary (for charts)
+        const repaymentSummary = await Repayment.aggregate([
+            { $group: {
+                _id: '$status',
+                count: { $sum: 1 },
+                total: { $sum: '$amount' }
+            }}
+        ]);
+
+        // Loan type distribution (if you have loan types)
+        // For simplicity, we'll use loans array length as a placeholder.
+
+        res.json({
+            statusCounts,
+            monthlyTrend,
+            totalApproved: totalApproved[0]?.total || 0,
+            recent,
+            repaymentSummary
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
 });
 
 // Get all users
@@ -619,30 +811,29 @@ app.put('/api/approve-loan/:id', authMiddleware, async (req, res) => {
             return res.status(403).json({ message: "Access denied" });
         }
 
+        const { remarks, approvedAmount, interestRate, tenureMonths } = req.body;
+
         const loan = await LoanApplication.findById(req.params.id).populate('userId');
         if (!loan) return res.status(404).json({ message: "Not found" });
+
+        // Set loan terms if provided
+        if (approvedAmount) loan.approvedAmount = approvedAmount;
+        if (interestRate) loan.interestRate = interestRate;
+        if (tenureMonths) loan.tenureMonths = tenureMonths;
 
         loan.applicationStatus = 'approved';
         loan.reviewedBy = req.user.id;
         loan.reviewedAt = new Date();
-        loan.approvalRemarks = req.body.remarks || 'Approved';
+        loan.approvalRemarks = remarks || 'Approved';
 
         loan.reviewHistory.push({
             reviewer: req.user.id,
             action: 'approved',
-            comment: req.body.remarks || 'Approved',
+            comment: remarks || 'Approved',
             date: new Date()
         });
 
         await loan.save();
-
-        await createAuditLog(
-    req.user.id,
-    'UPDATE',  // or could be 'APPROVE' if you add a custom action
-    'LoanApplication',
-    loan._id,
-    { applicationStatus: loan.applicationStatus, remarks: req.body.remarks || req.body.reason }
-);
 
         // Notify customer
         if (loan.userId) {
@@ -768,19 +959,174 @@ app.delete('/api/delete-loan/:id', authMiddleware, async (req, res) => {
 });
 
 
-// Dashboard stats
-app.get('/api/dashboard-stats', async (req, res) => {
+// ==================== REPAYMENT ROUTES ====================
+
+// Get all loans with repayment info (for banker/admin) – simplified list
+app.get('/api/repayments/loans', authMiddleware, async (req, res) => {
     try {
-        const stats = await LoanApplication.aggregate([
-            { $group: { _id: "$applicationStatus", count: { $sum: 1 }, totalAmount: { $sum: "$salary" } } }
-        ]);
-        const totalUsers = await User.countDocuments();
-        const totalApps = await LoanApplication.countDocuments();
-        res.json({ stats, totalUsers, totalApps });
+        let filter = {};
+        if (req.user.role === 'Customer') {
+            filter.userId = req.user.id;
+        } else {
+            // bankers/admins see all approved/disbursed loans
+            filter.applicationStatus = { $in: ['approved', 'disbursed'] };
+        }
+        const loans = await LoanApplication.find(filter)
+            .select('fullName approvedAmount emi nextDueDate outstandingBalance status disbursedDate userId')
+            .populate('userId', 'fullName email');
+        res.json(loans);
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
 });
+
+// Get repayment schedule for a specific loan
+app.get('/api/repayments/loan/:loanId', authMiddleware, async (req, res) => {
+    try {
+        const loan = await LoanApplication.findById(req.params.loanId);
+        if (!loan) return res.status(404).json({ message: 'Loan not found' });
+
+        // Check permission
+        if (req.user.role === 'Customer' && loan.userId.toString() !== req.user.id) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        // Get repayments for this loan
+        const repayments = await Repayment.find({ loanId: req.params.loanId }).sort({ dueDate: 1 });
+        res.json({ loan, repayments });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Generate repayment schedule (when loan is approved/disbursed)
+app.post('/api/repayments/generate/:loanId', authMiddleware, async (req, res) => {
+    try {
+        if (!['Admin', 'Banker'].includes(req.user.role)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const { approvedAmount, interestRate, tenureMonths, disbursedDate } = req.body;
+
+        const loan = await LoanApplication.findById(req.params.loanId);
+        if (!loan) return res.status(404).json({ message: 'Loan not found' });
+
+        // Allow updating loan terms via this request
+        if (approvedAmount) loan.approvedAmount = approvedAmount;
+        if (interestRate) loan.interestRate = interestRate;
+        if (tenureMonths) loan.tenureMonths = tenureMonths;
+        if (disbursedDate) loan.disbursedDate = new Date(disbursedDate);
+
+        // After potential updates, check if all required fields are present
+        if (!loan.approvedAmount || !loan.interestRate || !loan.tenureMonths) {
+            return res.status(400).json({ 
+                message: 'Loan terms not set. Please provide approvedAmount, interestRate, and tenureMonths.' 
+            });
+        }
+
+        // Delete any existing schedule for this loan
+        await Repayment.deleteMany({ loanId: req.params.loanId });
+
+        const principal = loan.approvedAmount;
+        const annualRate = loan.interestRate;
+        const monthlyRate = annualRate / (12 * 100);
+        const tenure = loan.tenureMonths;
+        const emi = principal * monthlyRate * Math.pow(1 + monthlyRate, tenure) /
+                    (Math.pow(1 + monthlyRate, tenure) - 1);
+
+        let balance = principal;
+        const schedule = [];
+        const startDate = loan.disbursedDate || new Date();
+
+        for (let i = 1; i <= tenure; i++) {
+            const interest = balance * monthlyRate;
+            const principalPaid = emi - interest;
+            balance -= principalPaid;
+            const dueDate = new Date(startDate);
+            dueDate.setMonth(dueDate.getMonth() + i);
+
+            schedule.push({
+                loanId: loan._id,
+                dueDate,
+                amount: Math.round(emi),
+                principalPaid: Math.round(principalPaid),
+                interestPaid: Math.round(interest),
+                status: 'pending'
+            });
+        }
+
+        await Repayment.insertMany(schedule);
+
+        // Update loan with EMI and nextDueDate
+        loan.emi = Math.round(emi);
+        loan.outstandingBalance = principal;
+        loan.nextDueDate = schedule[0].dueDate;
+        loan.status = 'active';
+        await loan.save();
+
+        res.json({ message: 'Repayment schedule generated', count: schedule.length });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+// Record a payment (mark EMI as paid)
+app.post('/api/repayments/pay/:repaymentId', authMiddleware, async (req, res) => {
+    try {
+        if (!['Admin', 'Banker'].includes(req.user.role)) {
+            return res.status(403).json({ message: 'Access denied' });
+        }
+
+        const repayment = await Repayment.findById(req.params.repaymentId).populate('loanId');
+        if (!repayment) return res.status(404).json({ message: 'Repayment not found' });
+
+        repayment.status = 'paid';
+        repayment.paidDate = new Date();
+        repayment.paidBy = req.user.id;
+        await repayment.save();
+
+        // Update loan outstanding balance and next due date
+        const loan = await LoanApplication.findById(repayment.loanId._id);
+        if (loan) {
+            loan.outstandingBalance -= repayment.principalPaid;
+            loan.totalPaid = (loan.totalPaid || 0) + repayment.amount;
+            // Find next pending repayment
+            const nextPending = await Repayment.findOne({
+                loanId: loan._id,
+                status: 'pending'
+            }).sort({ dueDate: 1 });
+            loan.nextDueDate = nextPending ? nextPending.dueDate : null;
+            if (!nextPending) loan.status = 'closed';
+            await loan.save();
+        }
+
+        res.json({ message: 'Payment recorded', repayment });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Get summary for dashboard (optional)
+app.get('/api/repayments/summary', authMiddleware, async (req, res) => {
+    try {
+        let match = {};
+        if (req.user.role === 'Customer') {
+            match.userId = req.user.id;
+        }
+        const loans = await LoanApplication.aggregate([
+            { $match: match },
+            { $group: {
+                _id: null,
+                totalActiveLoans: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+                totalOutstanding: { $sum: '$outstandingBalance' },
+                totalPaid: { $sum: '$totalPaid' }
+            }}
+        ]);
+        res.json(loans[0] || { totalActiveLoans: 0, totalOutstanding: 0, totalPaid: 0 });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 
 // Profile route (JWT protected)
 // ==================== PROFILE & PASSWORD MANAGEMENT ====================
@@ -1102,6 +1448,8 @@ app.get('/api/audit-logs/:id', authMiddleware, async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 });
+
+app.use('/api/chatbot', chatbotRoutes);
 
 // ==================== START SERVER ====================
 

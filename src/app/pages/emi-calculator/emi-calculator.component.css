@@ -1,12 +1,88 @@
-.bg-success-subtle {
-  background-color: #d1e7dd;
+/* --- Global & Layout --- */
+.text-dark-green { color: #064e3b; }
+
+.calculator-card, .eligibility-card {
+  border-radius: 16px;
+  background: #ffffff;
+  transition: transform 0.2s ease;
 }
-.bg-warning-subtle {
-  background-color: #fff3cd;
+
+.calculator-card:hover, .eligibility-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
 }
-.card-header {
-  font-weight: 600;
+
+/* --- Custom Range Slider --- */
+.custom-range {
+  height: 6px;
+  border-radius: 5px;
+  background: #e9ecef;
+  accent-color: #0d6efd; /* Primary Color */
+  cursor: pointer;
 }
-.form-range {
+
+.custom-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #0d6efd;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  margin-top: -6px; /* Align vertical */
+}
+
+.custom-range::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 5px;
+}
+
+/* --- Inputs --- */
+.form-control:focus, .form-select:focus {
+  box-shadow: none;
+  background-color: #fff;
+}
+
+/* --- Eligibility Result Card --- */
+.result-card {
+  transition: all 0.3s ease;
+}
+
+.result-card.eligible {
+  background: linear-gradient(135deg, #198754, #20c997);
+  color: white;
+  box-shadow: 0 8px 16px rgba(25, 135, 84, 0.2);
+}
+
+.result-card.not-eligible {
+  background: linear-gradient(135deg, #fd7e14, #ffc107);
+  color: white;
+  box-shadow: 0 8px 16px rgba(253, 126, 20, 0.2);
+}
+
+.divider {
+  height: 1px;
+  background: rgba(255,255,255,0.3);
   width: 100%;
+}
+
+/* --- Toggle Buttons --- */
+.btn-xs {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border: 1px solid transparent;
+  color: #6c757d;
+  cursor: pointer;
+}
+
+.btn-white {
+  background-color: white;
+  color: black;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-weight: bold;
+}
+
+/* --- Table --- */
+.table-hover tbody tr:hover {
+  background-color: #f8f9fa;
 }

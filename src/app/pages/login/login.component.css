@@ -3,7 +3,7 @@
     justify-content: center;
     align-items: center;
     min-height: 100vh;
-    background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
+    background: linear-gradient(90deg, #e2e2e2, #c9ffdf);
 }
 
 
@@ -43,6 +43,20 @@ form{ width: 100%; }
     padding: 40px;
     z-index: 1;
     transition: .6s ease-in-out 1.2s, visibility 0s 1s;
+}
+/* Add this to your existing CSS */
+
+.form-box.verify {
+    position: absolute;
+    right: 0;
+    width: 100%; /* Take full width to center it or use logic */
+    height: 100%;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    z-index: 10; /* Above everything else */
 }
 
     .container.active .form-box{ right: 50%; }
@@ -111,7 +125,7 @@ form{ width: 100%; }
 .btn{
     width: 100%;
     height: 48px;
-    background: #7494ec;
+    background: #37d59e;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, .1);
     border: none;
@@ -136,6 +150,75 @@ form{ width: 100%; }
         margin: 0 8px;
     }
 
+    /* --- Separator Style (Line with Text) --- */
+.separator {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 25px 0 20px;
+    position: relative;
+}
+
+.separator::before,
+.separator::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: #ccc; /* Light gray line */
+}
+
+.separator span {
+    padding: 0 10px;
+    font-size: 14px;
+    color: #666;
+    font-weight: 500;
+}
+
+/* --- Social Icons Container --- */
+.social-icons {
+    display: flex;
+    justify-content: center;
+    gap: 15px; /* Space between icons */
+}
+
+/* --- Social Button Style --- */
+.social-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border: 1px solid #ddd;
+    border-radius: 50%; /* Circular button */
+    font-size: 22px;
+    color: #333;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    background: #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* --- Hover Effects --- */
+.social-btn:hover {
+    transform: translateY(-3px); /* Slight lift */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+}
+
+/* --- Specific Brand Colors on Hover --- */
+.social-btn.google:hover {
+    background: #37db94; /* Google Red */
+    color: #fff;
+    border-color: #000000;
+}
+
+.social-btn.facebook:hover {
+    background: #4267B2; /* Facebook Blue */
+    color: #fff;
+    border-color: #4267B2;
+}
+
+
 .toggle-box{
     position: absolute;
     width: 100%;
@@ -148,7 +231,7 @@ form{ width: 100%; }
         left: -250%;
         width: 300%;
         height: 100%;
-        background: #7494ec;
+        background: #229b73;
         /* border: 2px solid red; */
         border-radius: 150px;
         z-index: 2;
@@ -198,6 +281,17 @@ form{ width: 100%; }
         border: 2px solid #fff;
         box-shadow: none;
     }
+
+.form-box.login .signature {
+    position: absolute;    /* stay inside the form */
+    bottom: 17px;          /* distance from bottom of form */
+    width: 100%;           /* full width */
+    text-align: right;  
+    right: 25px;    /* center horizontally */
+    font-size: 13px;       /* small size */
+    color: #757776;           /* subtle color */
+}
+
 
 @media screen and (max-width: 650px){
     .container{ height: calc(100vh - 40px); }

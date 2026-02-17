@@ -1,135 +1,194 @@
-<div class="container my-4" *ngIf="ticket() as ticket">
+<div class="ticket-container" *ngIf="ticket() as ticket; else loading">
   <!-- Header -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-      <button class="btn btn-outline-secondary btn-sm me-2" (click)="goBack()">
+  <div class="ticket-header">
+    <div class="d-flex align-items-center gap-2">
+      <button class="back-btn" (click)="goBack()">
         <i class="bi bi-arrow-left"></i> Back
       </button>
-      <h3 class="fw-bold d-inline-block">
-        Ticket #{{ ticket._id.slice(-6) }}
-      </h3>
+      <h1 class="ticket-id">
+        <i class="bi bi-ticket"></i> #{{ ticket._id.slice(-6).toUpperCase() }}
+      </h1>
     </div>
-    <div>
-      <span class="badge fs-6 me-2" [ngClass]="getPriorityClass(ticket.priority)">
-        {{ ticket.priority | uppercase }} PRIORITY
+    <div class="ticket-badges">
+      <span class="badge-custom" [ngClass]="{
+        'bg-danger text-white': ticket.priority === 'high',
+        'bg-warning text-dark': ticket.priority === 'medium',
+        'bg-info text-dark': ticket.priority === 'low'
+      }">
+        <i class="bi" [ngClass]="{
+          'bi-exclamation-triangle-fill': ticket.priority === 'high',
+          'bi-exclamation-circle-fill': ticket.priority === 'medium',
+          'bi-info-circle-fill': ticket.priority === 'low'
+        }"></i>
+        {{ ticket.priority }}
       </span>
-      <span class="badge fs-6" [ngClass]="getStatusClass(ticket.status)">
+      <span class="badge-custom" [ngClass]="{
+        'bg-success text-white': ticket.status === 'open',
+        'bg-primary text-white': ticket.status === 'in-progress',
+        'bg-secondary text-white': ticket.status === 'closed'
+      }">
+        <i class="bi" [ngClass]="{
+          'bi-envelope-open-fill': ticket.status === 'open',
+          'bi-arrow-repeat': ticket.status === 'in-progress',
+          'bi-check-circle-fill': ticket.status === 'closed'
+        }"></i>
         {{ ticket.status | titlecase }}
       </span>
     </div>
   </div>
 
   <div class="row g-4">
-    <!-- Main Ticket Content -->
+    <!-- Main Content -->
     <div class="col-lg-8">
-      <div class="card shadow-sm mb-4">
-        <div class="card-body">
-          <h4 class="card-title">{{ ticket.subject }}</h4>
-          <p class="text-muted">
-            Opened by {{ ticket.userId?.fullName }} on {{ ticket.createdAt | date:'fullDate' }}
-          </p>
-          <hr>
-          <p class="card-text" style="white-space: pre-wrap;">{{ ticket.message }}</p>
+      <!-- Original Ticket -->
+      <div class="ticket-main-card">
+        <div class="ticket-author-line">
+          <i class="bi bi-person-circle"></i>
+        <span>
+  <strong>
+    {{ (ticket.userId?.fullName || 'Unknown User') | titlecase }}
+  </strong>
+  opened on {{ ticket.createdAt | date:'fullDate' }}
+  at {{ ticket.createdAt | date:'shortTime' }}
+</span>
+
+
+        </div>
+        <div class="ticket-content">
+          <h2 class="ticket-subject">{{ ticket.subject }}</h2>
+          <div class="ticket-message">{{ ticket.message }}</div>
         </div>
       </div>
 
       <!-- Replies -->
-      <div class="card shadow-sm">
-        <div class="card-header bg-light">
-          <h5 class="mb-0"><i class="bi bi-chat-text"></i> Replies ({{ ticket.replies.length }})</h5>
+      <div class="replies-section">
+        <div class="replies-header">
+          <i class="bi bi-chat-dots" style="color: #3b82f6;"></i>
+          <h5>Conversation</h5>
+          <span class="replies-count">{{ ticket.replies.length }}</span>
         </div>
-        <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+        <div class="replies-body">
           @if (ticket.replies.length === 0) {
-            <p class="text-muted text-center py-3">No replies yet.</p>
+            <div class="text-center py-4">
+              <i class="bi bi-chat-square-text fs-2" style="color: #cbd5e1;"></i>
+              <p class="text-muted small mt-2">No replies yet.</p>
+            </div>
           }
           @for (reply of ticket.replies; track reply._id) {
-            <div class="d-flex mb-3" [class.justify-content-end]="reply.userId?._id === currentUser()?._id">
-              <div class="bg-light rounded p-3" style="max-width: 80%;">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <strong>{{ reply.userId?.fullName || 'Support' }}</strong>
-                  <small class="text-muted ms-3">{{ reply.createdAt | date:'short' }}</small>
+            <div class="message-row" [class.justify-content-end]="reply.userId?._id === currentUser()?._id">
+              <div class="message-bubble">
+                <div class="message-meta">
+                  <span class="message-author">{{ reply.userId?.fullName || 'Support' }}</span>
+                  <span class="message-time">{{ reply.createdAt | date:'short' }}</span>
                 </div>
-                <p class="mb-0" style="white-space: pre-wrap;">{{ reply.message }}</p>
+                <div class="message-text">{{ reply.message }}</div>
               </div>
             </div>
           }
         </div>
+
         @if (canReply()) {
-          <div class="card-footer bg-white">
-            <div class="input-group">
-              <textarea class="form-control" placeholder="Type your reply..." rows="2"
-                        [(ngModel)]="replyMessage"></textarea>
-              <button class="btn btn-primary" type="button" (click)="addReply()" [disabled]="!replyMessage.trim()">
+          <div class="reply-footer">
+            <div class="reply-input-group">
+              <textarea 
+                rows="2" 
+                placeholder="Write a reply..." 
+                [(ngModel)]="replyMessage"
+                (keydown.enter)="$event.preventDefault(); replyMessage.trim() && addReply()"
+              ></textarea>
+              <div class="button-wrapper">  
+              <button class="send-btn" (click)="addReply()" [disabled]="!replyMessage.trim()">
                 <i class="bi bi-send"></i> Send
+              </button></div>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Sidebar - Management (Banker/Admin) -->
+    @if (canEdit()) {
+      <div class="col-lg-4">
+        <div class="manage-card">
+          <div class="manage-header">
+            <h5><i class="bi bi-gear"></i> Manage</h5>
+          </div>
+          <div class="manage-body">
+            <!-- Assigned To -->
+            <div class="manage-item">
+              <label>Assigned</label>
+              @if (ticket.assignedTo) {
+                <div class="current-assignee">
+                  <i class="bi bi-person-badge"></i> {{ ticket.assignedTo.fullName }}
+                </div>
+              } @else {
+                <div class="text-muted small">Unassigned</div>
+              }
+            </div>
+
+            <!-- Status -->
+            <div class="manage-item">
+              <label>Status</label>
+              <select class="custom-select" (change)="updateTicket('status', $any($event.target).value)">
+                @for (status of availableStatuses; track status) {
+                  <option [value]="status" [selected]="ticket.status === status">
+                    {{ status | titlecase }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Priority -->
+            <div class="manage-item">
+              <label>Priority</label>
+              <select class="custom-select" (change)="updateTicket('priority', $any($event.target).value)">
+                @for (priority of availablePriorities; track priority) {
+                  <option [value]="priority" [selected]="ticket.priority === priority">
+                    {{ priority | titlecase }}
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Reassign -->
+            <div class="manage-item">
+              <label>Reassign</label>
+              <select class="custom-select" (change)="updateTicket('assignedTo', $any($event.target).value)">
+                <option value="">Unassigned</option>
+                @for (assignee of availableAssignees; track assignee._id) {
+                  <option [value]="assignee._id" [selected]="ticket.assignedTo?._id === assignee._id">
+                    {{ assignee.fullName }} ({{ assignee.role }})
+                  </option>
+                }
+              </select>
+            </div>
+
+            <!-- Delete (Admin) -->
+            @if (currentUser()?.role === 'Admin') {
+              <hr class="my-2">
+              <button class="delete-btn" (click)="deleteTicket()">
+                <i class="bi bi-trash"></i> Delete Ticket
               </button>
-            </div>
+            }
           </div>
-        }
-      </div>
-    </div>
-
-    <!-- Sidebar - Status & Assignment (Banker/Admin only) -->
- <!-- Sidebar - Status & Assignment (Banker/Admin only) -->
-@if (canEdit()) {
-  <div class="col-lg-4">
-    <div class="card shadow-sm">
-      <div class="card-header bg-primary text-white">
-        <h5 class="mb-0"><i class="bi bi-gear"></i> Manage Ticket</h5>
-      </div>
-      <div class="card-body">
-        <!-- Current Assignee -->
-        @if (ticket.assignedTo) {
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Assigned To</label>
-            <div class="d-flex align-items-center">
-              <span class="badge bg-info text-dark">
-                {{ ticket.assignedTo.fullName }}
-              </span>
-            </div>
-          </div>
-        }
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Status</label>
-          <select class="form-select" (change)="updateTicket('status', $any($event.target).value)">
-            @for (status of availableStatuses; track status) {
-              <option [value]="status" [selected]="ticket.status === status">{{ status | titlecase }}</option>
-            }
-          </select>
         </div>
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Priority</label>
-          <select class="form-select" (change)="updateTicket('priority', $any($event.target).value)">
-            @for (priority of availablePriorities; track priority) {
-              <option [value]="priority" [selected]="ticket.priority === priority">{{ priority | titlecase }}</option>
-            }
-          </select>
-        </div>
-
-        <!-- Assignment Dropdown -->
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Reassign To</label>
-          <select class="form-select" (change)="updateTicket('assignedTo', $any($event.target).value)">
-            <option value="">Unassigned</option>
-            @for (assignee of availableAssignees; track assignee._id) {
-              <option [value]="assignee._id" [selected]="ticket.assignedTo?._id === assignee._id">
-                {{ assignee.fullName }} ({{ assignee.role }})
-              </option>
-            }
-          </select>
-        </div>
-
-        <!-- Delete Button (Admin only) -->
-        @if (currentUser()?.role === 'Admin') {
-          <hr>
-          <button class="btn btn-danger w-100" (click)="deleteTicket()">
-            <i class="bi bi-trash"></i> Delete Ticket
-          </button>
-        }
       </div>
-    </div>
-  </div>
-}
+    }
   </div>
 </div>
+
+<!-- Loading skeleton -->
+<ng-template #loading>
+  <div class="ticket-container">
+    <div class="skeleton" style="height: 70px;"></div>
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="skeleton" style="height: 200px;"></div>
+        <div class="skeleton" style="height: 150px; margin-top: 20px;"></div>
+      </div>
+      <div class="col-lg-4">
+        <div class="skeleton" style="height: 300px;"></div>
+      </div>
+    </div>
+  </div>
+</ng-template>

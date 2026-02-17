@@ -14,16 +14,16 @@ describe('AppComponent', () => {
     expect(app).toBeTruthy();
   });
 
-  it(`should have the 'Loan_Application_app_angular_19' title`, () => {
+  it(`should have the 'Finance App' title`, () => {
     const fixture = TestBed.createComponent(AppComponent);
     const app = fixture.componentInstance;
-    expect(app.title).toEqual('Loan_Application_app_angular_19');
+    expect(app.title).toEqual('Finance App');
   });
 
   it('should render title', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, Loan_Application_app_angular_19');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Hello, Finance App');
   });
 });

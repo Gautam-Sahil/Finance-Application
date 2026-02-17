@@ -1,0 +1,272 @@
+<div class="dashboard-container">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="page-title">
+        <i class="bi bi-speedometer2 me-2"></i>
+        Dashboard
+      </h2>
+      <p class="text-muted small" style="margin-left: 3rem; font-weight: 600;">Welcome back, <span class="fw-bold" style="color: rgb(52, 20, 237);">{{ currentUser()?.fullName || 'User' }}</span> </p>
+    </div>
+    <div class="date-badge">
+      <i class="bi bi-calendar3 me-1"></i> {{ today | date:'fullDate' }}
+    </div>
+  </div>
+
+<!-- Customer Dashboard -->
+@if (currentUser()?.role === 'Customer') {
+  @if (customerData(); as data) {
+    <!-- Summary Cards -->
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="stat-card bg-gradient-primary">
+          <div class="stat-icon"><i class="bi bi-briefcase"></i></div>
+          <div class="stat-content">
+            <span class="stat-label">Active Loans</span>
+            <span class="stat-value">{{ data.totalLoans }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="stat-card bg-gradient-success">
+          <div class="stat-icon"><i class="bi bi-currency-rupee"></i></div>
+          <div class="stat-content">
+            <span class="stat-label">Outstanding</span>
+            <span class="stat-value">{{ formatCurrency(data.totalOutstanding) }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+       <div class="stat-card bg-gradient-warning">
+  <div class="stat-icon"><i class="bi bi-calendar-check"></i></div>
+  <div class="stat-content">
+    <span class="stat-label">Next EMI</span>
+    <span class="stat-value">
+      {{ nextEmi ? (nextEmi.amount | currency:'INR') : 'N/A' }}
+    </span>
+    @if (nextEmi) {
+      <small class="text-blue-90">{{ nextEmi.dueDate | date:'mediumDate' }}</small>
+    }
+  </div>
+</div>
+
+
+      </div>
+    </div>
+
+    <!-- Your Loans (simple table) -->
+    @if (data.loans.length) {
+      <div class="card mt-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0"><i class="bi bi-piggy-bank me-2"></i>Your Loans</h5>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+              <thead>
+                <tr>
+                  <th>Loan</th>
+                  <th>Approved</th>
+                  <th>EMI</th>
+                  <th>Outstanding</th>
+                  <th>Next Due</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (loan of data.loans; track loan._id) {
+                  <tr>
+                    <td>{{ loan.name }}</td>
+                    <td>{{ loan.approvedAmount | currency:'INR' }}</td>
+                    <td>{{ loan.emi | currency:'INR' }}/mo</td>
+                    <td>{{ loan.outstanding | currency:'INR' }}</td>
+                    <td>{{ loan.nextDue ? (loan.nextDue | date:'mediumDate') : 'N/A' }}</td>
+                    <td>
+                      <a [routerLink]="['/repayments', loan._id]" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> Details
+                      </a>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    }
+
+    <!-- Recent Activity -->
+    <div class="card mt-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Recent Activity</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="list-group list-group-flush">
+          @for (activity of data.recentActivity; track activity.id) {
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                <span class="badge me-2" [ngClass]="getStatusColor(activity.status)">{{ activity.status }}</span>
+                <span>{{ activity.title }}</span>
+              </div>
+              <small class="text-muted">{{ activity.date | date:'medium' }}</small>
+            </div>
+          } @empty {
+            <div class="text-muted p-3">No recent activity</div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+}
+
+  @if (currentUser()?.role !== 'Customer') {
+    <div class="row g-4">
+      <div class="col-md-3">
+        <div class="stat-card bg-gradient-info">
+          <div class="stat-icon">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Pending</span>
+            <span class="stat-value">{{ (statusCounts() | filter:'_id':'pending')?.count || 0 }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-gradient-success">
+          <div class="stat-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Approved</span>
+            <span class="stat-value">{{ (statusCounts() | filter:'_id':'approved')?.count || 0 }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-gradient-primary">
+          <div class="stat-icon">
+            <i class="bi bi-x-circle"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Rejected</span>
+            <span class="stat-value">{{ (statusCounts() | filter:'_id':'rejected')?.count || 0 }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card bg-gradient-warning">
+          <div class="stat-icon">
+            <i class="bi bi-currency-rupee"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-label">Total Approved</span>
+            <span class="stat-value">{{ formatCurrency(totalApproved()) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mt-2">
+      <div class="col-md-6">
+        <div class="chart-card">
+          <h6 class="chart-title">Monthly Applications</h6>
+          <div style="height: 300px;">
+            <ngx-charts-line-chart
+              [view]="[500, 300]"
+              [results]="monthlyTrend()"
+              [scheme]="colorScheme"
+              [gradient]="gradient"
+              [xAxis]="showXAxis"
+              [yAxis]="showYAxis"
+              [legend]="false"
+              [showXAxisLabel]="showXAxisLabel"
+              [showYAxisLabel]="showYAxisLabel"
+              [xAxisLabel]="xAxisLabel"
+              [yAxisLabel]="yAxisLabel"
+              [autoScale]="true"
+              [yAxisTickFormatting]="formatYAxis">
+            </ngx-charts-line-chart>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="chart-card">
+          <h6 class="chart-title">Application Status</h6>
+          <div style="height: 300px;">
+            <ngx-charts-pie-chart
+              [view]="[500, 300]"
+              [results]="statusChartData()"
+              [scheme]="colorScheme"
+              [gradient]="gradient"
+              [legend]="true"
+              [labels]="true">
+            </ngx-charts-pie-chart>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card mt-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0"><i class="bi bi-table me-2"></i>Recent Applications</h5>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
+            <thead>
+              <tr>
+                <th>Applicant</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (app of recentApplications(); track app._id) {
+                <tr>
+                  <td>{{ app.fullName }}</td>
+                  <td>
+                    <span class="badge rounded-pill" [ngClass]="getStatusColor(app.applicationStatus)">
+                      {{ app.applicationStatus }}
+                    </span>
+                  </td>
+                  <td>{{ app.createdAt | date:'medium' }}</td>
+                  <td>
+                    <a [routerLink]="['/loan-application-list', app._id]" class="btn btn-sm btn-outline-primary">
+                      <i class="bi bi-eye"></i> View
+                    </a>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="text-muted text-center">No recent applications</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    @if (repaymentSummary().length) {
+      <div class="card mt-4">
+        <div class="card-header bg-white">
+          <h5 class="mb-0"><i class="bi bi-credit-card me-2"></i>Repayment Overview</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            @for (item of repaymentSummary(); track item._id) {
+              <div class="col-md-4">
+                <div class="repayment-stat">
+                  <span class="label">{{ item._id | titlecase }}</span>
+                  <span class="count">{{ item.count }}</span>
+                  <span class="amount">{{ item.total | currency:'INR' }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    }
+  }
+</div>

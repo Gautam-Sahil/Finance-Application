@@ -32,3 +32,62 @@
   border-color: #059669;
   color: white;
 }
+/* --- Changes Section Styling --- */
+
+.tracking-wide {
+  letter-spacing: 0.5px;
+  font-size: 0.75rem;
+}
+
+/* Container for the list of changes */
+.changes-grid-container {
+  background-color: #f8f9fa; /* Very light gray background */
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 8px 12px;
+  max-height: 200px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+/* Individual Row */
+.change-row {
+  display: grid;
+  grid-template-columns: 140px 1fr; /* Fixed width for keys, rest for values */
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.change-row:last-child {
+  border-bottom: none;
+}
+
+/* The Field Name (Key) */
+.change-key {
+  font-weight: 600;
+  color: #495057;
+  text-align: left; /* Aligns labels cleanly to the right */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The Value */
+.change-value {
+  color: #212529;
+  word-break: break-word; /* Prevents long text from overflowing */
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Raw JSON View Styling */
+.raw-json-box {
+  background-color: #212529;
+  color: #00ff9d;
+  padding: 15px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  max-height: 200px;
+  overflow: auto;
+}
+

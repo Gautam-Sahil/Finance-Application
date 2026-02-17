@@ -1,10 +1,21 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../pages/login/auth.service';
 import { MasterService } from '../../service/master.service';
 import { toast } from 'ngx-sonner';
+
+// Required to use Bootstrap's JavaScript API
+declare var bootstrap: any;
+
+interface UserProfile {
+  username: string;
+  fullName: string;
+  emailId?: string;
+  email?: string;
+}
 
 @Component({
   selector: 'app-profile-menu',
@@ -13,73 +24,123 @@ import { toast } from 'ngx-sonner';
   templateUrl: './profile-menu.component.html',
   styleUrls: ['./profile-menu.component.css']
 })
-export class ProfileMenuComponent implements OnInit {
+export class ProfileMenuComponent implements OnInit, OnDestroy {
   private authService = inject(AuthService);
   private masterService = inject(MasterService);
   private router = inject(Router);
+  private http = inject(HttpClient);
 
   currentUser: any = null;
 
-  // Edit Profile
-  editProfileModal: any;
-  editProfileForm = {
-    username: '',
-    fullName: '',
-    emailId: ''
-  };
+  // Modal Instances
+  private editProfileModal: any;
+  private changePasswordModal: any;
 
-  // Change Password
-  changePasswordModal: any;
-  passwordForm = {
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  };
+  // Forms
+  editProfileForm = { username: '', fullName: '', emailId: '' };
+  passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
 
   ngOnInit(): void {
+    // 1. Try getting from Signal first
     this.currentUser = this.authService.currentUserSignal();
+
+    // 2. Fallback to LocalStorage immediately if signal is empty (e.g. page refresh)
     if (!this.currentUser) {
       const stored = localStorage.getItem('loanUser');
-      if (stored) this.currentUser = JSON.parse(stored);
+      if (stored) {
+        try {
+          this.currentUser = JSON.parse(stored);
+          // Sync the signal so the rest of the app knows
+          this.authService.currentUserSignal.set(this.currentUser);
+        } catch (e) {
+          console.error("Error loading user from storage", e);
+        }
+      }
     }
   }
 
-  // Get user initials for avatar
+  // 🧹 CLEANUP: Handle DOM elements when component is destroyed
+  ngOnDestroy(): void {
+    // Dispose modals if they exist
+    if (this.editProfileModal) this.editProfileModal.dispose();
+    if (this.changePasswordModal) this.changePasswordModal.dispose();
+
+    // Remove the moved modals from <body> to prevent duplicates
+    const editEl = document.getElementById('editProfileModal');
+    if (editEl) editEl.remove();
+
+    const passEl = document.getElementById('changePasswordModal');
+    if (passEl) passEl.remove();
+
+    // Ensure backdrop is gone
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+  }
+
   getInitials(): string {
     if (!this.currentUser?.fullName) return 'U';
-    return this.currentUser.fullName
-      .split(' ')
-      .map((n: string) => n[0])
-      .join('')
-      .toUpperCase()
-      .substring(0, 2);
+    return this.currentUser.fullName.split(' ').map((n: any) => n[0]).join('').toUpperCase().substring(0, 2);
   }
 
   // ========== EDIT PROFILE ==========
-  openEditProfileModal() {
-    // Pre-fill form
-    this.editProfileForm = {
-      username: this.currentUser.username,
-      fullName: this.currentUser.fullName,
-      emailId: this.currentUser.emailId
-    };
+// ========== EDIT PROFILE ==========
+  openEditProfileModal(event: Event) {
+    event.preventDefault();
+    
+    // 1. Show modal immediately (optional, or wait for data)
     const modalElement = document.getElementById('editProfileModal');
     if (modalElement) {
-      this.editProfileModal = new (window as any).bootstrap.Modal(modalElement);
+      document.body.appendChild(modalElement);
+      this.editProfileModal = new bootstrap.Modal(modalElement);
       this.editProfileModal.show();
     }
-  }
 
+    // 2. Fetch FRESH data from Server to ensure Username exists
+    this.http.get<UserProfile>('http://localhost:3000/api/profile', {
+      headers: { Authorization: `Bearer ${localStorage.getItem('loanApp_token')}` }
+    }).subscribe({
+      next: (user: UserProfile) => {
+      console.log('Fetched Fresh User:', user); // 🟢 Debug Check
+      
+      // 3. Populate Form with Fresh Data
+      this.editProfileForm = {
+        username: user.username || '',
+        fullName: user.fullName || '',
+        emailId: user.emailId || user.email || '' 
+      };
+      
+      // Update local state to match
+      this.currentUser = user;
+      this.authService.updateUser(user);
+      },
+      error: (err: any) => {
+      console.error('Failed to fetch profile', err);
+      // Fallback to local data if server fails
+      if (this.currentUser) {
+         this.editProfileForm = {
+        username: this.currentUser.username || '',
+        fullName: this.currentUser.fullName || '',
+        emailId: this.currentUser.emailId || ''
+        };
+      }
+      }
+    });
+  }
   saveProfile() {
     this.masterService.updateProfile(this.editProfileForm).subscribe({
       next: (res: any) => {
-        // Update local storage and signal
+        // Update Local State with response data
         const updatedUser = { ...this.currentUser, ...res.user };
+        
         localStorage.setItem('loanUser', JSON.stringify(updatedUser));
         this.authService.updateUser(updatedUser);
         this.currentUser = updatedUser;
+        
         toast.success('Profile updated successfully');
-        this.editProfileModal.hide();
+        
+        if (this.editProfileModal) {
+          this.editProfileModal.hide();
+        }
       },
       error: (err) => {
         toast.error('Update failed', { description: err.error?.message });
@@ -87,12 +148,19 @@ export class ProfileMenuComponent implements OnInit {
     });
   }
 
+  closeEditModal() {
+    if (this.editProfileModal) this.editProfileModal.hide();
+  }
+
   // ========== CHANGE PASSWORD ==========
-  openChangePasswordModal() {
+  openChangePasswordModal(event: Event) {
+    event.preventDefault();
     this.passwordForm = { currentPassword: '', newPassword: '', confirmPassword: '' };
+    
     const modalElement = document.getElementById('changePasswordModal');
     if (modalElement) {
-      this.changePasswordModal = new (window as any).bootstrap.Modal(modalElement);
+      document.body.appendChild(modalElement);
+      this.changePasswordModal = new bootstrap.Modal(modalElement);
       this.changePasswordModal.show();
     }
   }
@@ -113,7 +181,9 @@ export class ProfileMenuComponent implements OnInit {
     }).subscribe({
       next: () => {
         toast.success('Password changed successfully');
-        this.changePasswordModal.hide();
+        if (this.changePasswordModal) {
+          this.changePasswordModal.hide();
+        }
       },
       error: (err) => {
         toast.error('Password change failed', { description: err.error?.message });
@@ -121,7 +191,10 @@ export class ProfileMenuComponent implements OnInit {
     });
   }
 
-  // ========== LOGOUT ==========
+  closePasswordModal() {
+    if (this.changePasswordModal) this.changePasswordModal.hide();
+  }
+
   logout() {
     this.authService.logout();
     this.router.navigate(['/login']);
