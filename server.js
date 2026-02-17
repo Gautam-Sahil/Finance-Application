@@ -311,6 +311,9 @@ loanApplicationSchema.post('save', function(doc) {
     }
 });
 
+app.get('/', (req, res) => {
+    res.status(200).send('Finance App Backend is Running! ');
+});
 
 // ==================== USER ROUTES ====================
 
