@@ -311,10 +311,11 @@ openApprovalModal() {
   this.approvalRemarks = '';
   const modalElement = document.getElementById('approveModal');
   if (modalElement) {
-    const modal = new (window as any).bootstrap.Modal(modalElement);
-    modal.show();
+    this.approveModal = new (window as any).bootstrap.Modal(modalElement);
+    this.approveModal.show();
   }
 }
+
   openRejectionModal() {
     this.rejectionReason = '';
     this.rejectModal = new (window as any).bootstrap.Modal(document.getElementById('rejectModal'));

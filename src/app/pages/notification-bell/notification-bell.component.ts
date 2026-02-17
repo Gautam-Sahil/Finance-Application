@@ -167,17 +167,6 @@ export class NotificationBellComponent {
   notifications = this.notificationService.notifications;
   unreadCount = this.notificationService.unreadCount;
 
-  constructor() {
-    // 🟢 REAL-TIME FIX: Re-connect socket whenever user logs in
-    effect(() => {
-      const user = this.authService.currentUserSignal();
-      if (user) {
-        // Force the service to re-initiate connection logic if needed
-        this.notificationService.initSocket();
-      }
-    });
-  }
-
   // 🟢 NAVIGATION FIX: Handle click logic manually
   handleNotificationClick(notif: any) {
     // 1. Mark as read
