@@ -73,7 +73,7 @@ router.post('/chat', authMiddleware, async (req, res) => {
         responseData.link = `/loan-application-list`; 
         responseData.actionText = "View My Loans";
       } else {
-        responseData.text = "You don't have any active loan applications yet.";
+        responseData.text = "customers don't have any active loan applications yet.";
         responseData.link = "/new-loan-form";
         responseData.actionText = "Start Application";
       }

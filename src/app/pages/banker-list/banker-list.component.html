@@ -152,7 +152,7 @@
                         
                         <!-- Delete Button (Only Admin can delete all, Banker can delete only Customers) -->
                         @if (canDelete(user)) {
-                        <button class="btn btn-sm btn-outline-danger" 
+                        <button class="btn btn-sm btn-outline-danger me-1" 
                                 (click)="deleteUser(user._id, user.username)"
                                 title="Delete User">
                             <i class="bi bi-trash"></i>
